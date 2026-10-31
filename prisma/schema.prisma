@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BranchConcept {
+  fried
+  burger
+  ash
+  cafe
+}
+
+enum CatalogItemType {
+  RAW
+  WEIGHED_SALE
+  PIECE
+}
+
+enum StockMovementType {
+  PURCHASE_IN
+  SALE_OUT
+  WASTE
+  ADJUSTMENT
+}
+
+enum SaleSource {
+  MANUAL
+  SCALE_RECEIPT
+  SCALE_SERIAL
+}
+
+enum ScaleConnection {
+  USB
+  RS232
+  PS2
+  BARCODE_ONLY
+}
+
+enum ScaleEventStatus {
+  pending
+  parsed
+  failed
+}
+
+model Branch {
+  id        String        @id @default(cuid())
+  legacyId  String?       @unique
+  name      String
+  city      String
+  concept   BranchConcept
+  isOpen    Boolean       @default(true)
+  isPilot   Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  catalogItems           CatalogItem[]
+  branchStocks           BranchStock[]
+  stockMovements         StockMovement[]
+  purchaseInvoices       PurchaseInvoice[]
+  saleInvoices           SaleInvoice[]
+  scaleTickets           ScaleTicket[]
+  scaleDevices           ScaleDevice[]
+  scaleIntegrationEvents ScaleIntegrationEvent[]
+}
+
+model CatalogItem {
+  id                 String          @id @default(cuid())
+  branchId           String?
+  pluCode            String?
+  barcode            String?
+  name               String
+  type               CatalogItemType
+  unitPriceRialPerKg BigInt?
+  isActive           Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+
+  branch         Branch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  branchStocks   BranchStock[]
+  stockMovements StockMovement[]
+  purchaseLines  PurchaseLine[]
+  saleLines      SaleLine[]
+
+  @@index([branchId, pluCode])
+}
+
+model BranchStock {
+  id             String @id @default(cuid())
+  branchId       String
+  catalogItemId  String
+  quantityGrams  Int    @default(0)
+
+  branch      Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, catalogItemId])
+}
+
+model StockMovement {
+  id            String            @id @default(cuid())
+  branchId      String
+  catalogItemId String
+  type          StockMovementType
+  quantityGrams Int
+  referenceKind String
+  referenceId   String
+  note          String?
+  createdAt     DateTime          @default(now())
+
+  branch      Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
+
+  @@index([branchId, createdAt])
+}
+
+model PurchaseInvoice {
+  id           String   @id @default(cuid())
+  branchId     String
+  invoiceNo    String?
+  purchasedAt  DateTime @default(now())
+  supplierName String?
+  totalRial    BigInt
+  createdBy    String?
+  createdAt    DateTime @default(now())
+
+  branch Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  lines  PurchaseLine[]
+}
+
+model PurchaseLine {
+  id                  String @id @default(cuid())
+  purchaseInvoiceId   String
+  catalogItemId       String
+  weightGrams         Int
+  unitPriceRialPerKg  BigInt
+  lineTotalRial       BigInt
+
+  purchaseInvoice PurchaseInvoice @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Cascade)
+  catalogItem     CatalogItem     @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
+}
+
+model SaleInvoice {
+  id              String     @id @default(cuid())
+  branchId        String
+  soldAt          DateTime   @default(now())
+  source          SaleSource @default(SCALE_RECEIPT)
+  scaleInvoiceNo  String?
+  scaleLabel      String?
+  boothLabel      String?
+  totalRial       BigInt
+  reprint         Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+
+  branch       Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  lines        SaleLine[]
+  scaleTickets ScaleTicket[]
+}
+
+model SaleLine {
+  id                 String @id @default(cuid())
+  saleInvoiceId      String
+  catalogItemId      String
+  weightGrams        Int
+  unitPriceRialPerKg BigInt
+  lineTotalRial      BigInt
+
+  saleInvoice SaleInvoice @relation(fields: [saleInvoiceId], references: [id], onDelete: Cascade)
+  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
+}
+
+model ScaleTicket {
+  id                  String   @id @default(cuid())
+  branchId            String
+  saleInvoiceId       String?
+  rawBarcode          String?
+  parsedWeightGrams   Int?
+  parsedUnitPriceRial BigInt?
+  payload             Json?
+  createdAt           DateTime @default(now())
+
+  branch      Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  saleInvoice SaleInvoice? @relation(fields: [saleInvoiceId], references: [id], onDelete: SetNull)
+}
+
+model ScaleDevice {
+  id         String          @id @default(cuid())
+  branchId   String
+  model      String          @default("RADIN")
+  connection ScaleConnection @default(BARCODE_ONLY)
+  label      String
+  isActive   Boolean         @default(true)
+  createdAt  DateTime        @default(now())
+
+  branch Branch                  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  events ScaleIntegrationEvent[]
+}
+
+model ScaleIntegrationEvent {
+  id            String           @id @default(cuid())
+  branchId      String
+  deviceId      String?
+  rawPayload    Json
+  status        ScaleEventStatus @default(pending)
+  saleInvoiceId String?
+  createdAt     DateTime         @default(now())
+
+  branch Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  device ScaleDevice? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+}

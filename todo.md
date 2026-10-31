@@ -51,3 +51,45 @@
 - [x] `npm run lint`
 - [x] `npm run build`
 - [x] تیک نهایی این فایل
+
+---
+
+# پایلوت انبار و فروش وزنی ([updates/01](updates/01))
+
+## فاز ۹ — Prisma و اسکیما
+- [x] نصب `prisma` + `@prisma/client`
+- [x] ایجاد `prisma/schema.prisma`
+- [x] اسکریپت‌های `package.json`: `db:generate`, `db:migrate`, `db:seed`, `postinstall`
+- [x] تکمیل `.env.example`
+- [x] migration `20251031140900_init_pilot_weight` (فایل SQL در repo)
+- [ ] اعمال روی DB: `npx prisma migrate deploy` (وقتی سرور PostgreSQL در دسترس است)
+- [ ] `npm run db:seed` (بعد از migrate)
+
+## فاز ۱۰ — لایه داده و API
+- [x] `lib/prisma.ts`
+- [x] سرویس‌های inventory / purchase / sale
+- [x] Route Handlers (`/api/branches/[branchId]/...`)
+
+## فاز ۱۱ — UI خرید وزنی (شریعتی)
+- [x] `/pilot/shariati/purchases`
+- [x] ثبت فاکتور خرید RAW + به‌روزرسانی موجودی
+
+## فاز ۱۲ — UI فروش وزنی فاز ۱ (ترازو RADIN)
+- [x] `/pilot/shariati/sales`
+- [x] بارکد stub + `ScaleTicket`
+- [x] کسر خودکار موجودی
+
+## فاز ۱۳ — گزارش پایلوت
+- [x] `/pilot/shariati/report`
+- [x] تطبیق وزنی MVP
+
+## فاز ۱۴ — یکپارچه‌سازی سخت‌افزار (فاز ۲)
+- [x] [docs/scale-radin-integration.md](docs/scale-radin-integration.md)
+- [x] API `POST /api/branches/2/scale-events`
+- [x] stub bridge [scripts/scale-bridge/README.md](scripts/scale-bridge/README.md)
+
+## فاز ۱۵ — چندشعبه و تأیید
+- [x] resolve شعبه با `legacyId` یا cuid در API
+- [x] `isPilot` در seed برای شعب بعدی
+- [x] منوی «پایلوت شریعتی» در Sidebar
+- [x] `npm run build` + lint

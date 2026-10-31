@@ -20,6 +20,7 @@ const PATH_ACCESS: Record<string, Record<UserRole, boolean>> = {
   '/roles': { owner: true, branchManager: false, cashier: false, chef: false },
   '/blog': { owner: true, branchManager: false, cashier: false, chef: false },
   '/app': { owner: true, branchManager: false, cashier: false, chef: false },
+  '/pilot/shariati': { owner: true, branchManager: true, cashier: false, chef: false },
 };
 
 const ALL_MENU_ITEMS = [
@@ -31,6 +32,7 @@ const ALL_MENU_ITEMS = [
   { name: 'کاربران و نقش‌ها', path: '/roles', icon: 'fa-user-shield' },
   { name: 'بلاگ', path: '/blog', icon: 'fa-newspaper' },
   { name: 'وب‌اپ مشتری', path: '/app', icon: 'fa-store' },
+  { name: 'پایلوت شریعتی', path: '/pilot/shariati', icon: 'fa-weight-scale' },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentUserRole = 'owner' }) => {

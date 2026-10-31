@@ -1,0 +1,6 @@
+HOST=0.0.0.0
+PORT=3000
+NODE_ENV=development
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+DATABASE_URL=postgresql://postgres:rk4XtZodnDI4n6DjvAZs@remote-pishgaman.runflare.com:32563/kasehcrmmtj_db
+DATABASE_URL_REMOTE=postgresql://postgres:rk4XtZodnDI4n6DjvAZs@remote-pishgaman.runflare.com:32563/kasehcrmmtj_db
