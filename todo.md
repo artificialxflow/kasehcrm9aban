@@ -95,3 +95,9 @@
 - [x] `isPilot` در seed برای شعب بعدی
 - [x] منوی «پایلوت شریعتی» در Sidebar
 - [x] `npm run build` + lint
+
+## فاز ۱۶ — مدیریت کatalog پایلوت
+- [x] API: `POST /api/branches/{id}/catalog`, `PATCH .../catalog/{itemId}`
+- [x] `/pilot/shariati/catalog` — افزودن RAW / فروش وزنی، PLU، فی، فعال/غیرفعال
+- [x] تعدیل موجودی: `POST .../stock/adjust` + فرم در خلاصه پایلوت
+- [ ] bridge واقعی USB/RS-232 — فاز ۲ عملیاتی

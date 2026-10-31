@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import PilotNav from '@/components/pilot/PilotNav';
+import StockAdjustForm from '@/components/pilot/StockAdjustForm';
 import StockTable from '@/components/pilot/StockTable';
 import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
 
@@ -36,6 +37,7 @@ export default function PilotHome() {
       </div>
       <PilotNav />
       <StockTable stock={stock} />
+      <StockAdjustForm onSuccess={load} />
     </div>
   );
 }

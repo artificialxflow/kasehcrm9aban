@@ -19,5 +19,5 @@ npx prisma db seed
 
 ## پایلوت شریعتی
 
-- UI: `/pilot/shariati`
+- UI: `/pilot/shariati` (خلاصه)، `/pilot/shariati/catalog` (کالا و PLU)
 - API: `/api/branches/2/...` (legacyId شعبه شریعتی)
