@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import PilotNav from '@/components/pilot/PilotNav';
+import { PurchaseInvoiceList } from '@/components/pilot/InvoiceLists';
 import PurchaseForm from '@/components/pilot/PurchaseForm';
 
 export default function PilotPurchasesPage() {
@@ -12,6 +13,7 @@ export default function PilotPurchasesPage() {
       <h2 className="text-2xl font-black text-slate-800">خرید وزنی — پایلوت شریعتی</h2>
       <PilotNav />
       <PurchaseForm key={key} onSuccess={() => setKey((k) => k + 1)} />
+      <PurchaseInvoiceList refreshKey={key} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 /** Rial (DB) → Toman for display */
-export function rialToToman(rial: bigint | number): number {
-  const n = typeof rial === "bigint" ? Number(rial) : rial;
+export function rialToToman(rial: bigint | number | string): number {
+  const n = typeof rial === "bigint" ? Number(rial) : typeof rial === "string" ? Number(rial) : rial;
   return Math.round(n / 10);
 }
 

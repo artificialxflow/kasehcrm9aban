@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import PilotNav from '@/components/pilot/PilotNav';
+import { SaleInvoiceList } from '@/components/pilot/InvoiceLists';
 import SaleForm from '@/components/pilot/SaleForm';
 
 export default function PilotSalesPage() {
@@ -12,6 +13,7 @@ export default function PilotSalesPage() {
       <h2 className="text-2xl font-black text-slate-800">فروش ترازو — پایلوت شریعتی</h2>
       <PilotNav />
       <SaleForm key={key} onSuccess={() => setKey((k) => k + 1)} />
+      <SaleInvoiceList refreshKey={key} pollMs={8000} />
     </div>
   );
 }

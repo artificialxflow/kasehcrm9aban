@@ -1,5 +1,6 @@
 import { resolveBranchId } from "@/lib/branch-resolve";
 import { errorResponse, jsonResponse } from "@/lib/api-json";
+import { verifyScaleApiKey } from "@/lib/scale-api-auth";
 import { ingestScaleEvent } from "@/lib/services/scale-integration";
 import { prisma } from "@/lib/prisma";
 
@@ -20,6 +21,8 @@ export async function GET(_req: Request, ctx: RouteCtx) {
 }
 
 export async function POST(req: Request, ctx: RouteCtx) {
+  if (!verifyScaleApiKey(req)) return errorResponse("UNAUTHORIZED", 401);
+
   const { branchId: key } = await ctx.params;
   const branch = await resolveBranchId(key);
   if (!branch) return errorResponse("BRANCH_NOT_FOUND", 404);

@@ -101,3 +101,12 @@
 - [x] `/pilot/shariati/catalog` — افزودن RAW / فروش وزنی، PLU، فی، فعال/غیرفعال
 - [x] تعدیل موجودی: `POST .../stock/adjust` + فرم در خلاصه پایلوت
 - [ ] bridge واقعی USB/RS-232 — فاز ۲ عملیاتی
+
+## فاز ۱۷ — پنل بدون mock (عملیاتی)
+- [x] `GET /api/branches`, `PATCH /api/branches/{id}`, `GET /api/dashboard`
+- [x] داشبورد، گزارشات، سفارشات، شعب از PostgreSQL
+- [x] مشتریان: placeholder صادق (بدون mock)
+- [x] لیست فاکتور خرید/فروش پایلوت + polling فروش
+- [x] `SCALE_API_KEY` اختیاری برای scale-events
+- [ ] Auth کاربران + جداول Customer/Order آنلاین
+- [ ] وب‌اپ مشتری `/app` از DB

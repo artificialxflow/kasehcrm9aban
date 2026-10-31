@@ -1,28 +1,68 @@
 ﻿'use client';
 
-import React, { useMemo, useState } from 'react';
-import { BRANCHES_DATA, CONCEPTS } from '@/lib/constants';
-import { Branch, BranchConcept } from '@/lib/types';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { CONCEPTS } from '@/lib/constants';
+import { BranchConcept } from '@/lib/types';
+import type { ApiBranch } from '@/lib/api/types';
+import { rialToToman } from '@/lib/money';
+
+type BranchRow = {
+  id: string;
+  patchKey: string;
+  name: string;
+  isOpen: boolean;
+  city: string;
+  dailyRevenue: number;
+  concept: BranchConcept;
+  isPilot: boolean;
+  activeCouriers: number;
+};
+
+function mapBranch(b: ApiBranch): BranchRow {
+  return {
+    id: b.legacyId ?? b.id,
+    patchKey: b.legacyId ?? b.id,
+    name: b.name,
+    isOpen: b.isOpen,
+    city: b.city,
+    dailyRevenue: rialToToman(b.dailySaleRial),
+    concept: b.concept,
+    isPilot: b.isPilot,
+    activeCouriers: 0,
+  };
+}
 
 const Branches: React.FC = () => {
-  const [branches, setBranches] = useState<Branch[]>(BRANCHES_DATA);
-  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+  const [branches, setBranches] = useState<BranchRow[]>([]);
+  const [loadError, setLoadError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [selectedBranch, setSelectedBranch] = useState<BranchRow | null>(null);
   const [activeModal, setActiveModal] = useState<'settings' | 'menu' | null>(null);
   const [conceptFilter, setConceptFilter] = useState<BranchConcept | 'all'>('all');
+  const [saveError, setSaveError] = useState('');
 
-  // Menu mock data for "View Menu"
-  const menuItems = [
-    { id: 1, name: 'کاسه کباب مخصوص', price: '۳۸۰,۰۰۰', category: 'کباب', image: '🥘', available: true },
-    { id: 2, name: 'جوجه زعفرانی', price: '۲۹۰,۰۰۰', category: 'کباب', image: '🍗', available: true },
-    { id: 3, name: 'میرزا قاسمی', price: '۱۴۵,۰۰۰', category: 'پیش‌غذا', image: '🍆', available: true },
-    { id: 4, name: 'دوغ محلی پارچه‌ای', price: '۶۵,۰۰۰', category: 'نوشیدنی', image: '🥛', available: false },
-    { id: 5, name: 'زیتون پرورده شمال', price: '۸۵,۰۰۰', category: 'مخلفات', image: '🫒', available: true },
-    { id: 6, name: 'کته قالبی زعفرانی', price: '۹۵,۰۰۰', category: 'برنج', image: '🍚', available: true },
-  ];
+  const loadBranches = useCallback(() => {
+    setLoading(true);
+    fetch('/api/branches')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.error) throw new Error(data.error);
+        setBranches((data.branches as ApiBranch[]).map(mapBranch));
+        setLoadError('');
+      })
+      .catch((e) => setLoadError(e instanceof Error ? e.message : 'خطا'))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const handleOpenModal = (branch: Branch, type: 'settings' | 'menu') => {
+  useEffect(() => {
+    loadBranches();
+  }, [loadBranches]);
+
+  const handleOpenModal = (branch: BranchRow, type: 'settings' | 'menu') => {
     setSelectedBranch(branch);
     setActiveModal(type);
+    setSaveError('');
   };
 
   const handleCloseModal = () => {
@@ -30,12 +70,23 @@ const Branches: React.FC = () => {
     setSelectedBranch(null);
   };
 
-  const handleUpdateBranch = (e: React.FormEvent) => {
+  const handleUpdateBranch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBranch) return;
-    
-    setBranches(prev => prev.map(b => b.id === selectedBranch.id ? selectedBranch : b));
-    handleCloseModal();
+    setSaveError('');
+    try {
+      const res = await fetch(`/api/branches/${selectedBranch.patchKey}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: selectedBranch.name, isOpen: selectedBranch.isOpen }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'خطا');
+      handleCloseModal();
+      loadBranches();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'خطا');
+    }
   };
 
   const filteredBranches = useMemo(
@@ -85,12 +136,12 @@ const Branches: React.FC = () => {
               ))}
             </div>
           </div>
-          <button className="bg-orange-500 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg shadow-orange-200 hover:bg-orange-600 transition-all flex items-center gap-2">
-            <i className="fa-solid fa-plus"></i>
-            افزودن شعبه جدید
-          </button>
+          <span className="text-xs font-bold text-slate-400 px-4 py-3">شعب از PostgreSQL (seed) — افزودن شعبه از پنل در فاز بعد</span>
         </div>
       </div>
+
+      {loadError && <p className="text-rose-600 font-bold mb-4">{loadError}</p>}
+      {loading && <p className="text-slate-500 font-bold mb-4">در حال بارگذاری شعب...</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {filteredBranches.map((branch) => {
@@ -108,11 +159,13 @@ const Branches: React.FC = () => {
                     <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black ${conceptUi.badgeClass}`}>
                       {conceptUi.label}
                     </span>
-                    {branch.isMoving && (
-                      <span className="px-2 py-0.5 rounded-lg text-[9px] font-black bg-amber-100 text-amber-700 flex items-center gap-1">
-                        <i className="fa-solid fa-truck-moving" />
-                        در حال جابه‌جایی
-                      </span>
+                    {branch.isPilot && (
+                      <Link
+                        href="/pilot/shariati"
+                        className="px-2 py-0.5 rounded-lg text-[9px] font-black bg-orange-100 text-orange-700 hover:bg-orange-200"
+                      >
+                        پایلوت انبار
+                      </Link>
                     )}
                   </div>
                 </div>
@@ -131,10 +184,8 @@ const Branches: React.FC = () => {
                   <span className="text-slate-800 font-black">{branch.city}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-500 font-bold">پیک فعال:</span>
-                  <span className="text-slate-800 font-black flex items-center gap-1">
-                    🛵 {branch.activeCouriers}
-                  </span>
+                  <span className="text-slate-500 font-bold">شناسه:</span>
+                  <span className="text-slate-800 font-black font-mono text-xs">{branch.id}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-500 font-bold">فروش امروز:</span>
@@ -216,31 +267,7 @@ const Branches: React.FC = () => {
                 </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-black text-slate-500 mb-2">تعداد پیک‌های فعال 🛵</label>
-                <div className="flex items-center gap-4">
-                  <button 
-                    type="button"
-                    onClick={() => setSelectedBranch({...selectedBranch, activeCouriers: Math.max(0, selectedBranch.activeCouriers - 1)})}
-                    className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-xl font-bold hover:bg-slate-200 transition-colors"
-                  >
-                    -
-                  </button>
-                  <input 
-                    type="number" 
-                    readOnly
-                    value={selectedBranch.activeCouriers}
-                    className="flex-1 text-center bg-transparent border-none text-2xl font-black text-slate-800"
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => setSelectedBranch({...selectedBranch, activeCouriers: selectedBranch.activeCouriers + 1})}
-                    className="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center text-xl font-bold hover:bg-orange-200 transition-colors"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+              {saveError && <p className="text-sm font-bold text-rose-600">{saveError}</p>}
 
               <div className="pt-4 flex gap-3">
                 <button 
@@ -279,49 +306,22 @@ const Branches: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
-              {['همه', 'کباب', 'پیش‌غذا', 'نوشیدنی', 'برنج', 'مخلفات'].map((cat, i) => (
-                <button key={i} className={`px-5 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap ${i === 0 ? 'bg-orange-500 text-white shadow-md' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {menuItems.map((item) => (
-                  <div key={item.id} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex items-center justify-between group hover:border-orange-200 transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="text-3xl bg-white w-14 h-14 rounded-xl flex items-center justify-center shadow-sm">
-                        {item.image}
-                      </div>
-                      <div>
-                        <p className="font-black text-slate-800">{item.name}</p>
-                        <p className="text-[10px] font-bold text-orange-500">{item.price} تومان</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="text-left">
-                        <p className="text-[10px] font-black text-slate-400 mb-1">موجودی شعبه</p>
-                        <span className={`px-2 py-1 rounded-lg text-[9px] font-black ${item.available ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                          {item.available ? 'موجود' : 'ناموجود'}
-                        </span>
-                      </div>
-                      <button className="p-2 text-slate-300 hover:text-orange-500 transition-colors">
-                        <i className="fa-solid fa-pen-to-square"></i>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
-              <p className="text-xs text-slate-400 font-bold italic">نکته: تغییرات موجودی در لحظه روی اپلیکیشن مشتریان اعمال می‌شود.</p>
-              <button className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-slate-800 transition-all">
-                به‌روزرسانی کلی منو
-              </button>
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50 rounded-3xl border border-slate-100">
+              {selectedBranch.isPilot ? (
+                <>
+                  <p className="font-black text-slate-800 mb-2">کالا و PLU این شعبه در پایلوت انبار است.</p>
+                  <Link
+                    href="/pilot/shariati/catalog"
+                    className="mt-4 px-6 py-3 bg-orange-500 text-white rounded-2xl font-black text-sm"
+                  >
+                    مدیریت کالاها
+                  </Link>
+                </>
+              ) : (
+                <p className="font-bold text-slate-500 text-sm leading-relaxed max-w-md">
+                  منوی آنلاین و موجودی این شعبه هنوز به دیتابیس وصل نشده. فعلاً فقط شعب پایلوت (شریعتی) انبار وزنی دارند.
+                </p>
+              )}
             </div>
           </div>
         </div>

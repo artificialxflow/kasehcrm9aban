@@ -1,7 +1,19 @@
-# Scale Bridge (stub)
+# Scale Bridge
 
-سرویس واسط برای خواندن پورت USB/RS-232 ترازو RADIN و ارسال به API.
+روی **All-in-One شعبه** اجرا شود (USB به همین PC وصل است).
 
-فاز ۲: پیاده‌سازی با `serialport` یا درایور OEM رادین پس از دریافت مستند پروتکل از تأمین‌کننده.
+## تست بدون سریال
 
-Endpoint هدف: `POST /api/branches/2/scale-events`
+```bash
+cd scripts/scale-bridge
+set API_BASE=https://kasehcrm.ronakcare.ir
+set BRANCH_ID=2
+set SCALE_API_KEY=your-secret-if-set-on-server
+node index.mjs --demo
+```
+
+## فاز ۲
+
+افزودن `serialport` و parse خروجی COM؛ سپس همان `postScaleEvent()` در `index.mjs`.
+
+Endpoint: `POST /api/branches/2/scale-events` — header اختیاری `x-scale-api-key` اگر `SCALE_API_KEY` روی سرور تنظیم شده باشد.

@@ -1,49 +1,98 @@
 ﻿'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { STATS, SALES_CHART_DATA, RECENT_ORDERS, BRANCHES_DATA, CONCEPTS } from '@/lib/constants';
-import { BranchConcept, OrderStatus } from '@/lib/types';
+import { CONCEPTS } from '@/lib/constants';
+import type { DashboardSummary } from '@/lib/api/types';
+import { BranchConcept } from '@/lib/types';
+import { formatToman, rialToToman } from '@/lib/money';
 
 const Dashboard: React.FC = () => {
   const [conceptFilter, setConceptFilter] = useState<BranchConcept | 'all'>('all');
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [error, setError] = useState('');
 
-  const filteredBranches = useMemo(
-    () => (conceptFilter === 'all' ? BRANCHES_DATA : BRANCHES_DATA.filter((b) => b.concept === conceptFilter)),
-    [conceptFilter],
-  );
+  useEffect(() => {
+    fetch('/api/dashboard')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.error) throw new Error(data.error);
+        setSummary(data as DashboardSummary);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : 'خطا'));
+  }, []);
 
-  const filteredOrders = useMemo(
-    () => (conceptFilter === 'all' ? RECENT_ORDERS : RECENT_ORDERS.filter((o) => o.concept === conceptFilter)),
-    [conceptFilter],
-  );
+  const filteredBranches = useMemo(() => {
+    if (!summary) return [];
+    return conceptFilter === 'all'
+      ? summary.branches
+      : summary.branches.filter((b) => b.concept === conceptFilter);
+  }, [summary, conceptFilter]);
 
-  const totalTodayRevenue = useMemo(
-    () => filteredBranches.reduce((sum, b) => sum + b.dailyRevenue, 0),
-    [filteredBranches],
-  );
+  const filteredSales = useMemo(() => {
+    if (!summary) return [];
+    return conceptFilter === 'all'
+      ? summary.recentSales
+      : summary.recentSales.filter((s) => s.branch.concept === conceptFilter);
+  }, [summary, conceptFilter]);
 
-  const totalWeeklyRevenueMock = useMemo(
-    () => Math.round(totalTodayRevenue * 5.2),
-    [totalTodayRevenue],
-  );
+  const totalTodayRevenue = useMemo(() => {
+    if (!summary) return 0;
+    if (conceptFilter === 'all') return rialToToman(summary.totalSaleRialToday);
+    return filteredBranches.reduce((sum, b) => sum + rialToToman(b.dailySaleRial), 0);
+  }, [summary, conceptFilter, filteredBranches]);
 
-  const getStatusColor = (status: OrderStatus) => {
-    switch (status) {
-      case OrderStatus.DELIVERED: return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case OrderStatus.SHIPPED: return 'bg-blue-100 text-blue-700 border-blue-200';
-      case OrderStatus.COOKING: return 'bg-amber-100 text-amber-700 border-amber-200';
-      case OrderStatus.CANCELLED: return 'bg-rose-100 text-rose-700 border-rose-200';
-      default: return 'bg-slate-100 text-slate-700';
-    }
-  };
+  const totalWeeklyRevenue = useMemo(() => {
+    if (!summary) return 0;
+    return summary.salesChart.reduce((s, d) => s + d.sales, 0);
+  }, [summary]);
+
+  const chartData = summary?.salesChart ?? [];
+
+  if (error) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        <p className="text-rose-600 font-bold">خطا در بارگذاری داشبورد: {error}</p>
+      </div>
+    );
+  }
+
+  if (!summary) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        <p className="text-slate-500 font-bold">در حال بارگذاری داشبورد...</p>
+      </div>
+    );
+  }
+
+  const statCards = [
+    {
+      label: 'فروش وزنی امروز (ثبت‌شده)',
+      value: `${totalTodayRevenue.toLocaleString('fa-IR')} تومان`,
+      icon: 'fa-coins',
+      sub: `${summary.saleCountToday} فاکتور`,
+    },
+    {
+      label: 'شعب باز',
+      value: `${summary.openBranches} / ${summary.branchCount}`,
+      icon: 'fa-store',
+      sub: 'از PostgreSQL',
+    },
+    {
+      label: 'خرید انبار امروز (پایلوت)',
+      value: `${summary.purchaseCountToday} فاکتور`,
+      icon: 'fa-box',
+      sub: 'شعب با isPilot',
+    },
+  ];
 
   return (
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
       {/* Stats + Concept Filter */}
       <div className="flex flex-col lg:flex-row lg:items-start gap-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
-          {STATS.map((stat, idx) => (
+          {statCards.map((stat, idx) => (
             <div
               key={idx}
               className="p-6 bg-white rounded-3xl border-2 border-slate-100 shadow-sm transition-transform hover:-translate-y-1"
@@ -52,18 +101,10 @@ const Dashboard: React.FC = () => {
                 <div className="p-3 rounded-2xl bg-orange-50 text-orange-600">
                   <i className={`fa-solid ${stat.icon} text-xl`}></i>
                 </div>
-                <span
-                  className={`text-xs font-black px-2 py-1 rounded-lg ${
-                    stat.isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
-                  }`}
-                >
-                  {stat.change}
-                </span>
+                <span className="text-xs font-black px-2 py-1 rounded-lg bg-slate-50 text-slate-600">{stat.sub}</span>
               </div>
               <p className="text-slate-500 text-sm font-bold mb-1">{stat.label}</p>
-              <p className="text-2xl font-black text-slate-800">
-                {idx === 0 ? `${totalTodayRevenue.toLocaleString()} تومان` : stat.value}
-              </p>
+              <p className="text-2xl font-black text-slate-800">{stat.value}</p>
             </div>
           ))}
         </div>
@@ -100,7 +141,7 @@ const Dashboard: React.FC = () => {
           <div className="mt-4 pt-4 border-t border-slate-100">
             <p className="text-[11px] font-black text-slate-500 mb-2">گزارش مالی خلاصه</p>
             <p className="text-sm font-black text-slate-800">امروز: {totalTodayRevenue.toLocaleString()} تومان</p>
-            <p className="text-sm font-black text-orange-600 mt-1">این هفته: {totalWeeklyRevenueMock.toLocaleString()} تومان</p>
+            <p className="text-sm font-black text-orange-600 mt-1">۷ روز: {totalWeeklyRevenue.toLocaleString('fa-IR')} تومان</p>
           </div>
         </div>
       </div>
@@ -119,7 +160,7 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={SALES_CHART_DATA}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 'bold' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 'bold' }} dx={-10} />
@@ -128,8 +169,8 @@ const Dashboard: React.FC = () => {
                   itemStyle={{ color: '#f97316', fontWeight: 'bold' }}
                 />
                 <Bar dataKey="sales" radius={[8, 8, 0, 0]} barSize={40}>
-                  {SALES_CHART_DATA.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={index === 6 ? '#f97316' : '#fdba74'} />
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={index === chartData.length - 1 ? '#f97316' : '#fdba74'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -151,7 +192,7 @@ const Dashboard: React.FC = () => {
                   <div>
                     <p className="text-sm font-black text-slate-800">{branch.name}</p>
                     <p className="text-[10px] text-slate-500 font-bold">
-                      شهر: {branch.city} • پیک فعال: {branch.activeCouriers}
+                      {branch.city} • امروز: {rialToToman(branch.dailySaleRial).toLocaleString('fa-IR')} تومان
                     </p>
                   </div>
                 </div>
@@ -165,106 +206,51 @@ const Dashboard: React.FC = () => {
               </div>
             ))}
           </div>
-          <button className="w-full mt-6 py-3 rounded-2xl bg-orange-50 text-orange-600 font-black text-sm hover:bg-orange-100 transition-colors">
+          <Link href="/branches" className="block w-full mt-6 py-3 rounded-2xl bg-orange-50 text-orange-600 font-black text-sm hover:bg-orange-100 transition-colors text-center">
             مشاهده جزییات تمام شعب
-          </button>
+          </Link>
         </div>
       </div>
 
-      {/* AI Placeholders: پیشنهادات هوشمند و آیتم‌های فصلی */}
-      <div className="bg-gradient-to-l from-indigo-600 to-slate-800 rounded-3xl p-6 text-white shadow-xl">
-        <h3 className="text-lg font-black mb-4">پیشنهادات هوشمند (AI)</h3>
-        <p className="text-indigo-200 text-xs font-bold mb-4">
-          پیشنهاد آیتم‌های فصلی که می‌توانند به منوی ثابت اضافه شوند (Mock).
-        </p>
-        <ul className="space-y-2 mb-4">
-          <li className="flex items-center gap-2 text-sm font-bold">
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
-            دمنوش — تقاضای بالا؛ پیشنهاد: ثابت در منو
-          </li>
-          <li className="flex items-center gap-2 text-sm font-bold">
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
-            آب دو خیار — فصلی؛ قابل نگه‌داری در منو
-          </li>
-          <li className="flex items-center gap-2 text-sm font-bold">
-            <span className="w-2 h-2 rounded-full bg-slate-400" />
-            للو کباب — فصلی؛ فعلاً نگه‌داری نشده
-          </li>
-        </ul>
-        <button type="button" className="w-full py-3 bg-white text-indigo-900 rounded-2xl font-black text-sm hover:bg-indigo-50 transition-colors shadow-lg">
-          تحلیل خودکار فروش (اتصال به بک‌اند AI در آینده)
-        </button>
-      </div>
-
-      {/* Recent Orders Table */}
+      {/* Recent weight sales from DB */}
       <div className="bg-white rounded-3xl border-2 border-slate-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-lg font-black text-slate-800">آخرین سفارشات ثبت شده 📝</h3>
-          <button className="text-orange-500 font-bold text-sm">مشاهده همه</button>
+          <h3 className="text-lg font-black text-slate-800">آخرین فروش وزنی (دیتابیس)</h3>
+          <Link href="/orders" className="text-orange-500 font-bold text-sm">مشاهده همه</Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-right border-collapse">
             <thead>
               <tr className="bg-slate-50">
-                <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">شناسه</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">مشتری</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">شعبه</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">مبلغ کل</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">زمان</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">وضعیت</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">عملیات</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-500">شعبه</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-500">اقلام</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-500">مبلغ</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-500">زمان</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-500">منبع</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-black text-slate-800">{order.id}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-slate-700">{order.customerName}</td>
-                  <td className="px-6 py-4 text-sm text-slate-600 font-bold">
-                    <div>{order.branch}</div>
-                    <div className="text-[10px] text-slate-400 font-bold">
-                      {order.concept === 'fried'
-                        ? 'سوخاری'
-                        : order.concept === 'burger'
-                        ? 'مکیان برگر'
-                        : order.concept === 'ash'
-                        ? 'آش و حلیم'
-                        : 'کافه‌رستوران'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-black text-slate-800">{order.totalPrice.toLocaleString()} تومان</td>
-                  <td className="px-6 py-4 text-sm text-slate-500 font-bold">{order.date}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      <span
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black border ${getStatusColor(order.status)}`}
-                      >
-                        {order.status}
-                      </span>
-                      <span
-                        className={`px-3 py-1.5 rounded-xl text-[9px] font-black ${
-                          order.paymentStatus === 'paid'
-                            ? 'bg-emerald-50 text-emerald-600'
-                            : order.paymentStatus === 'pending'
-                            ? 'bg-amber-50 text-amber-600'
-                            : 'bg-rose-50 text-rose-600'
-                        }`}
-                      >
-                        {order.paymentStatus === 'paid'
-                          ? 'پرداخت‌شده'
-                          : order.paymentStatus === 'pending'
-                          ? 'در انتظار پرداخت'
-                          : 'پرداخت ناموفق'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button className="p-2 text-slate-400 hover:text-orange-500 transition-colors">
-                      <i className="fa-solid fa-eye"></i>
-                    </button>
+              {filteredSales.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500 font-bold text-sm">
+                    هنوز فروشی ثبت نشده — از پایلوت شریعتی یا bridge ترازو ثبت کنید.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredSales.map((sale) => (
+                  <tr key={sale.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-black text-slate-800">{sale.branch.name}</td>
+                    <td className="px-6 py-4 text-xs font-bold text-slate-600">
+                      {sale.lines.map((l) => l.catalogItem.name).join(' · ')}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-black text-orange-600">{formatToman(sale.totalRial)} تومان</td>
+                    <td className="px-6 py-4 text-sm text-slate-500 font-bold">
+                      {new Date(sale.soldAt).toLocaleString('fa-IR')}
+                    </td>
+                    <td className="px-6 py-4 text-xs font-black text-slate-500">{sale.source}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
