@@ -62,8 +62,10 @@
 - [x] اسکریپت‌های `package.json`: `db:generate`, `db:migrate`, `db:seed`, `postinstall`
 - [x] تکمیل `.env.example`
 - [x] migration `20251031140900_init_pilot_weight` (فایل SQL در repo)
-- [ ] اعمال روی DB: `npx prisma migrate deploy` (وقتی سرور PostgreSQL در دسترس است)
-- [ ] `npm run db:seed` (بعد از migrate)
+- [x] اعمال روی DB: `npx prisma migrate deploy` (production)
+- [x] `npx prisma db seed` / `npm run db:seed` (بعد از migrate)
+- [x] حذف باکس «نسخه مدیریت» از Sidebar
+- [x] `tsx` در dependencies برای seed روی Runflare
 
 ## فاز ۱۰ — لایه داده و API
 - [x] `lib/prisma.ts`

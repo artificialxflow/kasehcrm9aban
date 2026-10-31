@@ -83,11 +83,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentUserRole = 'o
             );
           })}
         </nav>
-
-        <div className="absolute bottom-8 left-4 right-4 p-4 bg-orange-50 rounded-2xl border border-orange-100">
-          <p className="text-xs text-orange-800 font-bold mb-1">نسخه مدیریت ۱.۲</p>
-          <p className="text-[10px] text-orange-600 leading-relaxed">بهینه‌سازی شده برای زنجیره شعب شمال ایران</p>
-        </div>
       </aside>
     </>
   );
