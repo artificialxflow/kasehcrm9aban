@@ -1,13 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { UserRole } from '@/lib/types';
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const currentUserRole: UserRole = 'owner';
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole>('owner');
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.user?.role) setCurrentUserRole(data.user.role as UserRole);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen flex bg-[#f8fafc]">

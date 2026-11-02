@@ -22,7 +22,7 @@ export async function postScaleEvent(rawPayload) {
 
 // Demo: node index.mjs --demo
 if (process.argv.includes("--demo")) {
-  postScaleEvent({ barcode: "POT001|225|1289000", source: "BRIDGE_DEMO" })
+  postScaleEvent({ barcode: "POT001|225|1289000", source: "USB" })
     .then((d) => console.log("OK", d))
     .catch((e) => {
       console.error(e);

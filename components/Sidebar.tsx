@@ -22,6 +22,7 @@ const PATH_ACCESS: Record<string, Record<UserRole, boolean>> = {
   '/app': { owner: true, branchManager: false, cashier: false, chef: false },
   '/pilot/shariati': { owner: true, branchManager: true, cashier: false, chef: false },
   '/pilot/shariati/catalog': { owner: true, branchManager: true, cashier: false, chef: false },
+  '/pilot/shariati/scale-events': { owner: true, branchManager: true, cashier: false, chef: false },
 };
 
 const ALL_MENU_ITEMS = [

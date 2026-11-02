@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import PilotNav from '@/components/pilot/PilotNav';
+import ScaleAgentStatusWidget from '@/components/pilot/ScaleAgentStatusWidget';
 import StockAdjustForm from '@/components/pilot/StockAdjustForm';
 import StockTable from '@/components/pilot/StockTable';
 import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
@@ -32,10 +33,11 @@ export default function PilotHome() {
       <div>
         <h2 className="text-2xl font-black text-slate-800">پایلوت انبار وزنی — شریعتی</h2>
         <p className="text-slate-500 font-bold mt-1">
-          {branchName || 'سوخاری بابل (شریعتی)'} · ترازو RADIN · فاز ۱: ثبت دستی/بارکد
+          {branchName || 'سوخاری بابل (شریعتی)'} · ترازو RADIN · فاز ۲: bridge + مانیتoring رویداد
         </p>
       </div>
       <PilotNav />
+      <ScaleAgentStatusWidget />
       <StockTable stock={stock} />
       <StockAdjustForm onSuccess={load} />
     </div>

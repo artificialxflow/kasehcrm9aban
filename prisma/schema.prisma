@@ -46,6 +46,13 @@ enum ScaleEventStatus {
   failed
 }
 
+enum StaffRole {
+  owner
+  branchManager
+  cashier
+  chef
+}
+
 model Branch {
   id        String        @id @default(cuid())
   legacyId  String?       @unique
@@ -64,6 +71,8 @@ model Branch {
   scaleTickets           ScaleTicket[]
   scaleDevices           ScaleDevice[]
   scaleIntegrationEvents ScaleIntegrationEvent[]
+  scaleAgentHeartbeats   ScaleAgentHeartbeat[]
+  scaleAgentLogUploads   ScaleAgentLogUpload[]
 }
 
 model CatalogItem {
@@ -208,4 +217,36 @@ model ScaleIntegrationEvent {
 
   branch Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
   device ScaleDevice? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+}
+
+model ScaleAgentHeartbeat {
+  id         String   @id @default(cuid())
+  branchId   String
+  hostname   String
+  lastSeenAt DateTime @default(now())
+  payload    Json
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, hostname])
+  @@index([branchId, lastSeenAt])
+}
+
+model ScaleAgentLogUpload {
+  id         String   @id @default(cuid())
+  branchId   String
+  receivedAt DateTime @default(now())
+  lines      Json
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, receivedAt])
+}
+
+model StaffUser {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  passwordHash String
+  role         StaffRole @default(branchManager)
+  createdAt    DateTime  @default(now())
 }

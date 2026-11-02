@@ -1,4 +1,5 @@
-import { PrismaClient, BranchConcept, CatalogItemType, ScaleConnection } from "@prisma/client";
+import { PrismaClient, BranchConcept, CatalogItemType, ScaleConnection, StaffRole } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -67,6 +68,14 @@ async function main() {
       branchId: pilot.id,
     },
     {
+      name: "سوخاری کیلویی (نمونه RADIN)",
+      type: CatalogItemType.WEIGHED_SALE,
+      pluCode: "1001",
+      barcode: "626564512",
+      unitPriceRialPerKg: BigInt(420_000),
+      branchId: pilot.id,
+    },
+    {
       name: "مرغ خام",
       type: CatalogItemType.RAW,
       pluCode: "RAW-CHICKEN",
@@ -97,6 +106,7 @@ async function main() {
           name: item.name,
           type: item.type,
           unitPriceRialPerKg: item.unitPriceRialPerKg ?? null,
+          barcode: "barcode" in item ? item.barcode : undefined,
         },
       });
     } else {
@@ -130,6 +140,21 @@ async function main() {
       },
     });
   }
+
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD?.trim() || "admin123";
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
+  await prisma.staffUser.upsert({
+    where: { username: "admin" },
+    create: {
+      username: "admin",
+      passwordHash,
+      role: StaffRole.owner,
+    },
+    update: {
+      passwordHash,
+      role: StaffRole.owner,
+    },
+  });
 }
 
 main()

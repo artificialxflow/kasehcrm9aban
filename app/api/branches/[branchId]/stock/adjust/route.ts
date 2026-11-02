@@ -3,11 +3,14 @@ import { errorResponse, jsonResponse } from "@/lib/api-json";
 import { applyStockMovement } from "@/lib/services/inventory";
 import { prisma } from "@/lib/prisma";
 import { kgToGrams } from "@/lib/money";
+import { requirePanelAuth } from "@/lib/panel-auth";
 
 type RouteCtx = { params: Promise<{ branchId: string }> };
 
 /** Set absolute stock quantity (inventory count correction). */
 export async function POST(req: Request, ctx: RouteCtx) {
+  const auth = await requirePanelAuth();
+  if (auth instanceof Response) return auth;
   const { branchId: key } = await ctx.params;
   const branch = await resolveBranchId(key);
   if (!branch) return errorResponse("BRANCH_NOT_FOUND", 404);

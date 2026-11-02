@@ -8,6 +8,7 @@ const links = [
   { href: '/pilot/shariati/catalog', label: 'کالاها و PLU' },
   { href: '/pilot/shariati/purchases', label: 'خرید وزنی' },
   { href: '/pilot/shariati/sales', label: 'فروش ترازو' },
+  { href: '/pilot/shariati/scale-events', label: 'رویداد ترازو' },
   { href: '/pilot/shariati/report', label: 'گزارش روزانه' },
 ];
 

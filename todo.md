@@ -108,5 +108,41 @@
 - [x] مشتریان: placeholder صادق (بدون mock)
 - [x] لیست فاکتور خرید/فروش پایلوت + polling فروش
 - [x] `SCALE_API_KEY` اختیاری برای scale-events
-- [ ] Auth کاربران + جداول Customer/Order آنلاین
+- [x] Auth پنل: StaffUser + login + middleware (Customer/Order آنلاین — بعداً)
 - [ ] وب‌اپ مشتری `/app` از DB
+
+---
+
+# هم‌ترازی پایلوت شریعتی ([shariati.md](shariati.md))
+
+## فاز ۱۸ — قرارداد API scale-events (shariati §3–6)
+- [x] Helper پاسخ `{ ok, id?, error?, fields? }` (`lib/scale-api-response.ts`)
+- [x] Validation `rawPayload` + `source` ∈ USB|RS232؛ 401/404/422
+- [x] Idempotency `(branchId, barcode, دقیقه)` — duplicate → 200
+- [x] POST موفق → 201 + `{ ok, id, saleId? }`
+- [x] GET با query `barcode`, `from`, `to`
+- [x] `.env.example` — یادداشت SCALE_API_KEY prod
+
+## فاز ۱۹ — UI رویداد ترازو (shariati §7)
+- [x] `/pilot/shariati/scale-events` + `ScaleEventList.tsx`
+- [x] `PilotNav` + `PilotHome` + `Sidebar` PATH_ACCESS
+
+## فاز ۲۰ — Catalog RADIN (shariati §11)
+- [x] seed PLU `1001` + قیمت 420000؛ نگه‌داشتن POT001
+- [x] به‌روز `docs/scale-radin-integration.md`
+
+## فاز ۲۱ — Agent heartbeat + logs (shariati §8)
+- [x] Prisma: `ScaleAgentHeartbeat`, `ScaleAgentLogUpload`
+- [x] POST heartbeat/logs + GET status (scale API key / panel)
+- [x] ویجت «آخرین سیگنال agent» در پایلوت
+
+## فاز ۲۲ — Auth پنل
+- [x] Prisma `StaffUser` + seed admin
+- [x] login/logout + `panel-session` + middleware
+- [x] `requirePanelAuth` روی API شعبه؛ `AdminShell` role از session
+
+## فاز ۲۳ — مستندات shariati §13
+- [x] چک‌لیست printable در `shariati.md` + curl/پاسخ جدید در docs
+
+## فاز ۲۴ — تأیید
+- [x] `npm run lint` + `npm run build`

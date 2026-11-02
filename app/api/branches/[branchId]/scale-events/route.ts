@@ -1,36 +1,89 @@
 import { resolveBranchId } from "@/lib/branch-resolve";
-import { errorResponse, jsonResponse } from "@/lib/api-json";
+import { jsonResponse } from "@/lib/api-json";
 import { verifyScaleApiKey } from "@/lib/scale-api-auth";
+import { validateScaleEventBody } from "@/lib/scale-event-validate";
+import { scaleError, scaleOk } from "@/lib/scale-api-response";
 import { ingestScaleEvent } from "@/lib/services/scale-integration";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
+import { requirePanelAuth } from "@/lib/panel-auth";
 
 type RouteCtx = { params: Promise<{ branchId: string }> };
 
-export async function GET(_req: Request, ctx: RouteCtx) {
+function parseDateParam(value: string | null): Date | null {
+  if (!value?.trim()) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export async function GET(req: Request, ctx: RouteCtx) {
+  const auth = await requirePanelAuth();
+  if (auth instanceof Response) return auth;
+
   const { branchId: key } = await ctx.params;
   const branch = await resolveBranchId(key);
-  if (!branch) return errorResponse("BRANCH_NOT_FOUND", 404);
+  if (!branch) return scaleError("not_found", 404);
 
-  const events = await prisma.scaleIntegrationEvent.findMany({
-    where: { branchId: branch.id },
+  const url = new URL(req.url);
+  const barcode = url.searchParams.get("barcode")?.trim();
+  const from = parseDateParam(url.searchParams.get("from"));
+  const to = parseDateParam(url.searchParams.get("to"));
+
+  const where: Prisma.ScaleIntegrationEventWhereInput = { branchId: branch.id };
+  if (from || to) {
+    where.createdAt = {};
+    if (from) where.createdAt.gte = from;
+    if (to) where.createdAt.lte = to;
+  }
+
+  let events = await prisma.scaleIntegrationEvent.findMany({
+    where,
     orderBy: { createdAt: "desc" },
-    take: 50,
+    take: 100,
   });
 
-  return jsonResponse({ branch, events });
+  if (barcode) {
+    events = events.filter((e) => {
+      const rp = e.rawPayload as { barcode?: string };
+      return (rp.barcode ?? "").includes(barcode);
+    });
+  }
+
+  return jsonResponse({ ok: true, branch, events: events.slice(0, 50) });
 }
 
 export async function POST(req: Request, ctx: RouteCtx) {
-  if (!verifyScaleApiKey(req)) return errorResponse("UNAUTHORIZED", 401);
+  if (!verifyScaleApiKey(req)) return scaleError("unauthorized", 401);
 
   const { branchId: key } = await ctx.params;
   const branch = await resolveBranchId(key);
-  if (!branch) return errorResponse("BRANCH_NOT_FOUND", 404);
+  if (!branch) return scaleError("not_found", 404);
 
-  const body = (await req.json()) as { deviceId?: string; rawPayload: object };
-  if (!body.rawPayload) return errorResponse("NO_PAYLOAD");
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return scaleError("validation", 422, { body: "invalid_json" });
+  }
 
-  const result = await ingestScaleEvent(branch.id, body);
-  const status = result.error ? 422 : 201;
-  return jsonResponse(result, { status });
+  const validated = validateScaleEventBody(body);
+  if (!validated.ok) {
+    return scaleError("validation", 422, validated.fields);
+  }
+
+  const result = await ingestScaleEvent(branch.id, validated.data);
+
+  if (result.kind === "duplicate") {
+    return scaleOk(result.eventId, {
+      status: 200,
+      duplicate: true,
+      saleId: result.saleInvoiceId ?? undefined,
+    });
+  }
+
+  if (result.kind === "error") {
+    return scaleError(result.code.toLowerCase(), 422, { ingest: result.code });
+  }
+
+  return scaleOk(result.eventId, { status: 201, saleId: result.saleId ?? undefined });
 }
