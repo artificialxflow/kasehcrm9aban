@@ -1,6 +1,6 @@
 import { resolveBranchId } from "@/lib/branch-resolve";
 import { jsonResponse } from "@/lib/api-json";
-import { getScaleAgentStatus } from "@/lib/services/scale-agent";
+import { getScaleAgentStatus, listScaleAgentHeartbeats } from "@/lib/services/scale-agent";
 import { requirePanelAuth } from "@/lib/panel-auth";
 
 type RouteCtx = { params: Promise<{ branchId: string }> };
@@ -15,6 +15,12 @@ export async function GET(req: Request, ctx: RouteCtx) {
 
   const url = new URL(req.url);
   const hostname = url.searchParams.get("hostname")?.trim() || undefined;
+  const listAll = url.searchParams.get("all") === "1";
+
+  if (listAll) {
+    const heartbeats = await listScaleAgentHeartbeats(branch.id);
+    return jsonResponse({ ok: true, branch, heartbeats });
+  }
 
   const heartbeat = await getScaleAgentStatus(branch.id, hostname);
   return jsonResponse({ ok: true, branch, heartbeat });

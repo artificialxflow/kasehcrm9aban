@@ -27,7 +27,7 @@
 - **v1:** هر رویداد parse‌شده = یک **HTTP POST** (نه WebSocket).
 - **لاگ خام** به‌صورت پیش‌فرض **روی PC** می‌ماند؛ آپلود batch = فاز ۲ (endpoint پایین).
 
-Agent فعلی: **v0.1.0** (CLI). roadmap agent: [`todo.md`](todo.md) در repo bridge.
+Agent فعلی: **v0.2.2** (GUI میدان `http://127.0.0.1:3921/` + CLI). roadmap agent: [`todo.md`](todo.md) در repo bridge.
 
 ---
 
@@ -370,14 +370,14 @@ curl -sS -X POST "https://kasehcrm.ronakcare.ir/api/branches/2/scale-events" \
 
 ## 13. چک‌لیست تحویل CRM (printable)
 
-- [x] Route `POST /api/branches/2/scale-events` registered
-- [x] Validation `rawPayload` + پاسخ 422 واضح
-- [x] Auth `x-scale-api-key` مطابق env
-- [x] INSERT DB + idempotency
-- [x] تست curl و `--demo-post` موفق (نیاز به `source: USB|RS232`)
-- [x] UI لیست رویدادها (`/pilot/shariati/scale-events`)
-- [x] (فاز ۲) heartbeat + log upload routes
-- [x] مستند داخلی CRM: [docs/scale-radin-integration.md](docs/scale-radin-integration.md) + این سند
+- [ ] Route `POST /api/branches/2/scale-events` registered
+- [ ] Validation `rawPayload` + پاسخ 422 واضح
+- [ ] Auth `x-scale-api-key` مطابق env
+- [ ] INSERT DB + idempotency
+- [ ] تست curl و `--demo-post` موفق
+- [ ] (اختیاری) UI لیست رویدادها
+- [ ] (فاز ۲) heartbeat + log upload routes
+- [ ] مستند داخلی CRM: لینک به `docs/scale-radin-integration.md` — **اگر فایل ندارید:** از این سند به‌عنوان منبع استفاده کنید
 
 ---
 

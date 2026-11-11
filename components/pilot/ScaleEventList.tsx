@@ -6,32 +6,63 @@ import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
 type ScaleEventRow = {
   id: string;
   status: string;
+  eventType: string;
+  agentHostname: string | null;
+  clientEventId: string | null;
   saleInvoiceId: string | null;
   createdAt: string;
-  rawPayload: { barcode?: string; source?: string; pluCode?: string; weightGrams?: number };
+  rawPayload: {
+    barcode?: string;
+    source?: string;
+    pluCode?: string;
+    weightGrams?: number;
+  };
 };
 
-export default function ScaleEventList({ pollMs = 10000 }: { pollMs?: number }) {
+const EVENT_FA: Record<string, string> = {
+  sale: 'فروش',
+  manual: 'دستی',
+  prep_in: 'ورود پخت',
+  prep_out: 'خروج پخت',
+  waste: 'ضایعات',
+};
+
+export default function ScaleEventList({
+  pollMs = 10000,
+  refreshKey = 0,
+}: {
+  pollMs?: number;
+  refreshKey?: number;
+}) {
   const base = pilotApiBase(PILOT_BRANCH_LEGACY_ID);
   const [rows, setRows] = useState<ScaleEventRow[]>([]);
   const [barcode, setBarcode] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [count24h, setCount24h] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(() => {
-    const q = barcode.trim() ? `?barcode=${encodeURIComponent(barcode.trim())}` : '';
-    fetch(`${base}/scale-events${q}`)
+    const params = new URLSearchParams();
+    params.set('stats24h', '1');
+    if (barcode.trim()) params.set('barcode', barcode.trim());
+    if (from) params.set('from', new Date(from).toISOString());
+    if (to) params.set('to', new Date(to).toISOString());
+    fetch(`${base}/scale-events?${params}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.error && !data.ok) throw new Error(data.error);
         setRows(data.events ?? []);
+        setCount24h(data.stats?.count24h ?? null);
         setError('');
       })
       .catch((e) => setError(e instanceof Error ? e.message : 'خطا'))
       .finally(() => setLoading(false));
-  }, [base, barcode]);
+  }, [base, barcode, from, to, refreshKey]);
 
   useEffect(() => {
+    setLoading(true);
     load();
     if (!pollMs) return;
     const t = setInterval(load, pollMs);
@@ -40,6 +71,12 @@ export default function ScaleEventList({ pollMs = 10000 }: { pollMs?: number }) 
 
   return (
     <div className="space-y-4">
+      {count24h != null ? (
+        <p className="text-sm font-bold text-slate-600">
+          رویدادهای ۲۴ ساعت اخیر: <span className="text-orange-600 font-black">{count24h}</span>
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap gap-3 items-end">
         <label className="flex flex-col gap-1">
           <span className="text-xs font-black text-slate-500">جستجوی barcode</span>
@@ -48,6 +85,24 @@ export default function ScaleEventList({ pollMs = 10000 }: { pollMs?: number }) 
             onChange={(e) => setBarcode(e.target.value)}
             placeholder="POT001 یا بخشی از رشته"
             className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-bold min-w-[220px]"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-black text-slate-500">از تاریخ</span>
+          <input
+            type="datetime-local"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-slate-200 text-sm"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-black text-slate-500">تا تاریخ</span>
+          <input
+            type="datetime-local"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-slate-200 text-sm"
           />
         </label>
         <button
@@ -77,9 +132,12 @@ export default function ScaleEventList({ pollMs = 10000 }: { pollMs?: number }) 
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-4 py-2 font-black text-slate-500">زمان</th>
+                <th className="px-4 py-2 font-black text-slate-500">نوع</th>
                 <th className="px-4 py-2 font-black text-slate-500">وضعیت</th>
-                <th className="px-4 py-2 font-black text-slate-500">منبع</th>
+                <th className="px-4 py-2 font-black text-slate-500">دستگاه</th>
+                <th className="px-4 py-2 font-black text-slate-500">وزن</th>
                 <th className="px-4 py-2 font-black text-slate-500">بارکد / PLU</th>
+                <th className="px-4 py-2 font-black text-slate-500">شناسه</th>
                 <th className="px-4 py-2 font-black text-slate-500">فاکتور</th>
               </tr>
             </thead>
@@ -89,19 +147,32 @@ export default function ScaleEventList({ pollMs = 10000 }: { pollMs?: number }) 
                   <td className="px-4 py-2 font-bold text-slate-600 whitespace-nowrap">
                     {formatDate(ev.createdAt)}
                   </td>
+                  <td className="px-4 py-2 text-xs font-bold">
+                    {EVENT_FA[ev.eventType] ?? ev.eventType}
+                  </td>
                   <td className="px-4 py-2">
                     <StatusBadge status={ev.status} />
                   </td>
-                  <td className="px-4 py-2 text-xs font-bold">{ev.rawPayload?.source ?? '—'}</td>
+                  <td className="px-4 py-2 text-xs font-bold">{ev.agentHostname ?? '—'}</td>
+                  <td className="px-4 py-2 text-xs font-mono dir-ltr text-left">
+                    {ev.rawPayload?.weightGrams != null ? `${ev.rawPayload.weightGrams} g` : '—'}
+                  </td>
                   <td className="px-4 py-2 text-xs font-mono dir-ltr text-left">
                     {ev.rawPayload?.barcode ??
                       (ev.rawPayload?.pluCode
-                        ? `${ev.rawPayload.pluCode} · ${ev.rawPayload.weightGrams}g`
+                        ? `${ev.rawPayload.pluCode} · ${ev.rawPayload.weightGrams ?? '?'}g`
                         : '—')}
+                  </td>
+                  <td className="px-4 py-2 text-xs text-slate-500 truncate max-w-[100px]" title={ev.clientEventId ?? ''}>
+                    {ev.clientEventId ? `${ev.clientEventId.slice(0, 12)}…` : '—'}
                   </td>
                   <td className="px-4 py-2 text-xs font-bold text-slate-600">
                     {ev.saleInvoiceId ? (
                       <span title={ev.saleInvoiceId}>{ev.saleInvoiceId.slice(0, 8)}…</span>
+                    ) : ev.status === 'failed' ? (
+                      <span className="text-rose-600" title="PLU در کatalog نیست یا parse ناموفق">
+                        ناموفق
+                      </span>
                     ) : (
                       '—'
                     )}

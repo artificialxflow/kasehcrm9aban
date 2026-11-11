@@ -1,6 +1,6 @@
 # یکپارچه‌سازی ترازو RADIN (فاز ۲)
 
-مرجع عملیاتی: [shariati.md](../shariati.md)
+مرجع عملیاتی: [shariati.md](../shariati.md) · [CRM-WEB-HANDOFF-FA.md](../CRM-WEB-HANDOFF-FA.md) · [field-FM1-checklist.md](./field-FM1-checklist.md)
 
 ## سخت‌افزار (شعبه شریعتی)
 
@@ -18,17 +18,21 @@
 ## فاز ۲ (USB / RS-232 + bridge)
 
 1. `KasehScaleBridge.exe --live` روی PC شعبه
-2. ارسال payload به `POST /api/branches/{branchId}/scale-events`:
+2. ارسال **فقط رویداد تجاری** (نه استریم وزن زنده) به `POST /api/branches/{branchId}/scale-events` با header `x-scale-api-key` اگر `SCALE_API_KEY` روی سرور تنظیم شده.
 
 ```json
 {
-  "deviceId": "optional-scale-device-cuid",
+  "eventType": "sale",
+  "clientEventId": "FM1-2026-11-11T12:00:00.000Z-abc123",
+  "deviceId": "FM1",
   "rawPayload": {
     "barcode": "POT001|225|1289000",
-    "source": "USB"
+    "source": "RS232"
   }
 }
 ```
+
+`deviceId` hostname (مثلاً FM1) در `agentHostname` ذخیره می‌شود؛ FK `ScaleDevice` فقط برای cuid معتبر.
 
 یا پس از parse agent:
 
@@ -43,8 +47,10 @@
 }
 ```
 
-3. سرور رویداد را در `ScaleIntegrationEvent` ذخیره می‌کند؛ در صورت parse موفق، `SaleInvoice` با `source=SCALE_SERIAL` می‌سازد.
-4. UI مانیتoring: `/pilot/shariati/scale-events`
+3. سرور در `ScaleIntegrationEvent` ذخیره می‌کند؛ **فقط `eventType: sale`** فاکتور می‌سازد. انواع `manual`, `prep_*`, `waste` بدون فاکتور.
+4. Idempotency: `(branchId, clientEventId)` — duplicate → `200` + `duplicate: true`.
+5. UI: `/pilot/shariati/scale-events` (لیست، manual، heartbeat، فیلتر تاریخ).
+6. ثبت دستی پنل: `POST .../scale-events/manual` (session پنل).
 
 ## Agent heartbeat / logs
 
@@ -69,7 +75,7 @@
 { "ok": true, "id": "clxxx...", "saleId": "clxxx..." }
 ```
 
-تکرار در همان دقیقه:
+تکرار `clientEventId`:
 
 ```json
 { "ok": true, "id": "...", "duplicate": true }

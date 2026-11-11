@@ -127,18 +127,23 @@ async function main() {
     });
   }
 
-  const device = await prisma.scaleDevice.findFirst({
-    where: { branchId: pilot.id, label: "ترازو ۱" },
-  });
-  if (!device) {
-    await prisma.scaleDevice.create({
-      data: {
-        branchId: pilot.id,
-        model: "RADIN",
-        connection: ScaleConnection.BARCODE_ONLY,
-        label: "ترازو ۱",
-      },
+  for (const def of [
+    { label: "ترازو ۱", connection: ScaleConnection.BARCODE_ONLY },
+    { label: "FM1", connection: ScaleConnection.RS232 },
+  ]) {
+    const device = await prisma.scaleDevice.findFirst({
+      where: { branchId: pilot.id, label: def.label },
     });
+    if (!device) {
+      await prisma.scaleDevice.create({
+        data: {
+          branchId: pilot.id,
+          model: "RADIN",
+          connection: def.connection,
+          label: def.label,
+        },
+      });
+    }
   }
 
   const adminPassword = process.env.SEED_ADMIN_PASSWORD?.trim() || "admin123";

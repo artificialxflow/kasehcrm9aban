@@ -49,3 +49,10 @@ export async function getScaleAgentStatus(branchId: string, hostname?: string) {
     orderBy: { lastSeenAt: "desc" },
   });
 }
+
+export async function listScaleAgentHeartbeats(branchId: string) {
+  return prisma.scaleAgentHeartbeat.findMany({
+    where: { branchId },
+    orderBy: { lastSeenAt: "desc" },
+  });
+}

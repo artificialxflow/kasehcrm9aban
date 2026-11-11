@@ -46,6 +46,14 @@ enum ScaleEventStatus {
   failed
 }
 
+enum ScaleBusinessEventType {
+  sale
+  manual
+  prep_in
+  prep_out
+  waste
+}
+
 enum StaffRole {
   owner
   branchManager
@@ -207,16 +215,23 @@ model ScaleDevice {
 }
 
 model ScaleIntegrationEvent {
-  id            String           @id @default(cuid())
-  branchId      String
-  deviceId      String?
-  rawPayload    Json
-  status        ScaleEventStatus @default(pending)
-  saleInvoiceId String?
-  createdAt     DateTime         @default(now())
+  id             String                 @id @default(cuid())
+  branchId       String
+  deviceId       String?
+  agentHostname  String?
+  eventType      ScaleBusinessEventType @default(sale)
+  clientEventId  String?
+  rawPayload     Json
+  status         ScaleEventStatus       @default(pending)
+  saleInvoiceId  String?
+  createdAt      DateTime               @default(now())
 
   branch Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
   device ScaleDevice? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@unique([branchId, clientEventId])
+  @@index([branchId, createdAt])
+  @@index([branchId, eventType])
 }
 
 model ScaleAgentHeartbeat {

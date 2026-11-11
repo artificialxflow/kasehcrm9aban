@@ -3,7 +3,8 @@ import { jsonResponse } from "@/lib/api-json";
 import { verifyScaleApiKey } from "@/lib/scale-api-auth";
 import { validateScaleEventBody } from "@/lib/scale-event-validate";
 import { scaleError, scaleOk } from "@/lib/scale-api-response";
-import { ingestScaleEvent } from "@/lib/services/scale-integration";
+import { ingestScaleEvent, countScaleEventsSince } from "@/lib/services/scale-integration";
+import { checkScaleEventRateLimit } from "@/lib/scale-rate-limit";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { requirePanelAuth } from "@/lib/panel-auth";
@@ -28,6 +29,7 @@ export async function GET(req: Request, ctx: RouteCtx) {
   const barcode = url.searchParams.get("barcode")?.trim();
   const from = parseDateParam(url.searchParams.get("from"));
   const to = parseDateParam(url.searchParams.get("to"));
+  const stats24h = url.searchParams.get("stats24h") === "1";
 
   const where: Prisma.ScaleIntegrationEventWhereInput = { branchId: branch.id };
   if (from || to) {
@@ -49,11 +51,27 @@ export async function GET(req: Request, ctx: RouteCtx) {
     });
   }
 
-  return jsonResponse({ ok: true, branch, events: events.slice(0, 50) });
+  const payload: Record<string, unknown> = {
+    ok: true,
+    branch,
+    events: events.slice(0, 50),
+  };
+
+  if (stats24h) {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    payload.stats = {
+      count24h: await countScaleEventsSince(branch.id, since),
+    };
+  }
+
+  return jsonResponse(payload);
 }
 
 export async function POST(req: Request, ctx: RouteCtx) {
   if (!verifyScaleApiKey(req)) return scaleError("unauthorized", 401);
+  if (!checkScaleEventRateLimit(req)) {
+    return scaleError("rate_limited", 429);
+  }
 
   const { branchId: key } = await ctx.params;
   const branch = await resolveBranchId(key);
@@ -66,7 +84,10 @@ export async function POST(req: Request, ctx: RouteCtx) {
     return scaleError("validation", 422, { body: "invalid_json" });
   }
 
-  const validated = validateScaleEventBody(body);
+  const hasKey = Boolean(process.env.SCALE_API_KEY?.trim());
+  const validated = validateScaleEventBody(body, {
+    requireClientEventId: hasKey,
+  });
   if (!validated.ok) {
     return scaleError("validation", 422, validated.fields);
   }
@@ -79,6 +100,10 @@ export async function POST(req: Request, ctx: RouteCtx) {
       duplicate: true,
       saleId: result.saleInvoiceId ?? undefined,
     });
+  }
+
+  if (result.kind === "stored") {
+    return scaleOk(result.eventId, { status: 201 });
   }
 
   if (result.kind === "error") {

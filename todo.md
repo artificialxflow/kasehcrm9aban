@@ -146,3 +146,49 @@
 
 ## فاز ۲۴ — تأیید
 - [x] `npm run lint` + `npm run build`
+
+---
+
+# پایلوت میدان FM1 — ترازو RADIN ([CRM-WEB-HANDOFF-FA.md](CRM-WEB-HANDOFF-FA.md))
+
+## فاز ۲۵ — Ops و رفع 401 (قبل از میدان)
+- [x] مستند [docs/ops-scale-api-key.md](docs/ops-scale-api-key.md)
+- [ ] کلید `SCALE_API_KEY` در Runflare + `scaleApiKey` در config شعبه (عملیاتی توسط شما)
+- [ ] `npx prisma migrate deploy` روی production
+- [ ] curl / `--demo-post` موفق از بیرون
+
+## فاز ۲۶ — قرارداد API (eventType, clientEventId, agentHostname)
+- [x] migration `20251111120000_scale_event_handoff`
+- [x] validate handoff + normalize وزن ASCII
+- [x] idempotency `clientEventId` + fallback barcode/دقیقه
+- [x] ingest بر اساس `eventType`؛ `FM1` → `agentHostname`
+- [x] rate limit اختیاری `SCALE_EVENTS_RATE_LIMIT_PER_MIN`
+- [x] docs به‌روز در `scale-radin-integration.md`
+
+## فاز ۲۷ — UI ثبت دستی و لیست غنی
+- [x] `POST .../scale-events/manual` + `ScaleManualEntryForm`
+- [x] ستون‌های eventType / دستگاه / وزن / clientEventId
+- [x] فیلتر تاریخ + آمار ۲۴h
+
+## فاز ۲۸ — چک‌لیست میدان FM1
+- [x] [docs/field-FM1-checklist.md](docs/field-FM1-checklist.md)
+- [ ] اجرای چک‌لیست در فروشگاه (COM13 / 19200 / demo-post / live)
+
+## فاز ۲۹ — کیفیت داده و گزارش
+- [x] شمارنده رویداد ۲۴h در UI
+- [x] فیلتر `from`/`to` در UI
+- [ ] دکمه «ثبت مجدد دستی» از روی ردیف failed (اختیاری بعدی)
+
+## فاز ۳۰ — rate limit و امنیت
+- [x] `lib/scale-rate-limit.ts` روی POST agent
+
+## فاز ۳۱ — رویدادهای عملیاتی
+- [x] enum `prep_in` / `prep_out` / `waste` — ذخیره بدون فاکتور
+
+## فاز ۳۲ — مانیتورینگ Agent
+- [x] `GET scale-agent/status?all=1` + `ScaleAgentMonitor`
+- [ ] UI آپلود لاگ agent (endpoint موجود — بعدی)
+
+## فاز ۳۳ — تأیید FM1
+- [x] `npm run lint` + `npm run build` پس از این فازها
+- [ ] تیک نهایی میدان در [field-FM1-checklist.md](docs/field-FM1-checklist.md)
