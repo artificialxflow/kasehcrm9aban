@@ -11,6 +11,7 @@ type Heartbeat = {
     comPort?: string;
     livePostEnabled?: boolean;
     mode?: string;
+    lastSerialDataAt?: string;
   };
 };
 
@@ -22,12 +23,14 @@ export default function ScaleAgentStatusWidget() {
 
   useEffect(() => {
     const load = () => {
-      fetch(`${base}/scale-agent/status?hostname=FM1`)
+      fetch(`${base}/scale-agent/status?all=1`)
         .then((r) => r.json())
         .then((data) => {
           if (data.error && data.ok === false) throw new Error(data.error);
-          setHb(data.heartbeat ?? null);
-          setError('');
+          const list = (data.heartbeats ?? []) as Heartbeat[];
+          const fm1 = list.find((h) => h.hostname === 'FM1');
+          setHb(fm1 ?? list[0] ?? null);
+          setError(list.length ? '' : 'no_agent');
           setNowMs(Date.now());
         })
         .catch((e) => setError(e instanceof Error ? e.message : 'خطا'));
@@ -40,7 +43,7 @@ export default function ScaleAgentStatusWidget() {
     return () => clearInterval(t);
   }, [base]);
 
-  if (error) {
+  if (error && error !== 'no_agent') {
     return (
       <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm font-bold text-rose-700">
         وضعیت agent: {error}
@@ -51,7 +54,7 @@ export default function ScaleAgentStatusWidget() {
   if (!hb) {
     return (
       <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm font-bold text-amber-900">
-        هنوز heartbeat از agent (مثلاً FM1) دریافت نشده.
+        هنوز heartbeat از هیچ agent این شعبه دریافت نشده (Bridge خاموش یا heartbeat فعال نیست).
       </div>
     );
   }
@@ -75,6 +78,11 @@ export default function ScaleAgentStatusWidget() {
         {hb.payload?.agentVersion ? ` · v${hb.payload.agentVersion}` : ''}
         {hb.payload?.livePostEnabled ? ' · live POST فعال' : ''}
       </p>
+      {hb.payload?.lastSerialDataAt ? (
+        <p className="text-xs font-bold text-slate-500 mt-1">
+          آخرین داده سریال: {new Date(hb.payload.lastSerialDataAt).toLocaleString('fa-IR')}
+        </p>
+      ) : null}
     </div>
   );
 }

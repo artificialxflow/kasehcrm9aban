@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
 
@@ -30,9 +31,11 @@ const EVENT_FA: Record<string, string> = {
 export default function ScaleEventList({
   pollMs = 10000,
   refreshKey = 0,
+  onManualSaved,
 }: {
   pollMs?: number;
   refreshKey?: number;
+  onManualSaved?: () => void;
 }) {
   const base = pilotApiBase(PILOT_BRANCH_LEGACY_ID);
   const [rows, setRows] = useState<ScaleEventRow[]>([]);
@@ -60,6 +63,26 @@ export default function ScaleEventList({
       .catch((e) => setError(e instanceof Error ? e.message : 'خطا'))
       .finally(() => setLoading(false));
   }, [base, barcode, from, to, refreshKey]);
+
+  async function retryManual(ev: ScaleEventRow) {
+    const rp = ev.rawPayload;
+    if (!rp.weightGrams && !rp.pluCode) return;
+    await fetch(`${base}/scale-events/manual`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rawPayload: {
+          source: rp.source ?? 'RS232',
+          pluCode: rp.pluCode,
+          weightGrams: rp.weightGrams,
+          barcode: rp.barcode,
+          note: 'retry-from-failed',
+        },
+      }),
+    });
+    onManualSaved?.();
+    load();
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -139,6 +162,7 @@ export default function ScaleEventList({
                 <th className="px-4 py-2 font-black text-slate-500">بارکد / PLU</th>
                 <th className="px-4 py-2 font-black text-slate-500">شناسه</th>
                 <th className="px-4 py-2 font-black text-slate-500">فاکتور</th>
+                <th className="px-4 py-2 font-black text-slate-500">اقدام</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -177,6 +201,13 @@ export default function ScaleEventList({
                       '—'
                     )}
                   </td>
+                  <td className="px-4 py-2 text-xs">
+                    {ev.status === 'failed' ? (
+                      <FailedRowActions ev={ev} onRetry={() => retryManual(ev)} />
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -202,6 +233,27 @@ function StatusBadge({ status }: { status: string }) {
     <span className={`px-2 py-0.5 rounded-lg text-xs font-black ${map[status] ?? 'bg-slate-100 text-slate-600'}`}>
       {label[status] ?? status}
     </span>
+  );
+}
+
+function FailedRowActions({
+  ev,
+  onRetry,
+}: {
+  ev: ScaleEventRow;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <Link href="/pilot/shariati/catalog" className="text-orange-600 font-black underline">
+        PLU
+      </Link>
+      {(ev.rawPayload?.pluCode || ev.rawPayload?.weightGrams) && (
+        <button type="button" onClick={onRetry} className="text-slate-700 font-black underline text-left">
+          ثبت manual
+        </button>
+      )}
+    </div>
   );
 }
 

@@ -31,6 +31,7 @@ export async function POST(req: Request, ctx: RouteCtx) {
     name?: string;
     type?: CatalogItemType;
     pluCode?: string;
+    barcode?: string;
     unitPriceRialPerKg?: string;
   };
   try {
@@ -54,6 +55,7 @@ export async function POST(req: Request, ctx: RouteCtx) {
       name: body.name,
       type: body.type,
       pluCode: body.pluCode,
+      barcode: body.barcode,
       unitPriceRialPerKg: unitPrice,
     });
     return jsonResponse({ item }, { status: 201 });

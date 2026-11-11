@@ -17,6 +17,7 @@ export async function createCatalogItem(
     name: string;
     type: CatalogItemType;
     pluCode?: string | null;
+    barcode?: string | null;
     unitPriceRialPerKg?: bigint | null;
   },
 ) {
@@ -42,6 +43,7 @@ export async function createCatalogItem(
         name: input.name.trim(),
         type: input.type,
         pluCode: plu,
+        barcode: input.barcode?.trim() || null,
         unitPriceRialPerKg: input.unitPriceRialPerKg ?? null,
       },
     });
@@ -64,6 +66,7 @@ export async function updateCatalogItem(
   input: {
     name?: string;
     pluCode?: string | null;
+    barcode?: string | null;
     unitPriceRialPerKg?: bigint | null;
     isActive?: boolean;
   },
@@ -87,6 +90,7 @@ export async function updateCatalogItem(
   if (input.pluCode !== undefined) data.pluCode = plu;
   if (input.unitPriceRialPerKg !== undefined) data.unitPriceRialPerKg = input.unitPriceRialPerKg;
   if (input.isActive !== undefined) data.isActive = input.isActive;
+  if (input.barcode !== undefined) data.barcode = input.barcode?.trim() || null;
 
   return prisma.catalogItem.update({
     where: { id: catalogItemId },

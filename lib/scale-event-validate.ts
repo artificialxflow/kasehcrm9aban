@@ -62,7 +62,7 @@ export function validateScaleEventBody(
   }
 
   let barcode = typeof rp.barcode === "string" ? rp.barcode : "";
-  let pluCode = typeof rp.pluCode === "string" ? rp.pluCode.trim() : "";
+  const pluCode = typeof rp.pluCode === "string" ? rp.pluCode.trim() : "";
   let weightGrams =
     typeof rp.weightGrams === "number" && Number.isFinite(rp.weightGrams)
       ? rp.weightGrams

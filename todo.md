@@ -154,7 +154,7 @@
 ## فاز ۲۵ — Ops و رفع 401 (قبل از میدان)
 - [x] مستند [docs/ops-scale-api-key.md](docs/ops-scale-api-key.md)
 - [ ] کلید `SCALE_API_KEY` در Runflare + `scaleApiKey` در config شعبه (عملیاتی توسط شما)
-- [ ] `npx prisma migrate deploy` روی production
+- [x] `npx prisma migrate deploy` روی production (No pending migrations تأیید شده)
 - [ ] curl / `--demo-post` موفق از بیرون
 
 ## فاز ۲۶ — قرارداد API (eventType, clientEventId, agentHostname)
@@ -192,3 +192,53 @@
 ## فاز ۳۳ — تأیید FM1
 - [x] `npm run lint` + `npm run build` پس از این فازها
 - [ ] تیک نهایی میدان در [field-FM1-checklist.md](docs/field-FM1-checklist.md)
+
+---
+
+# عملیات ترازو — UX اپراتور و داینامیک (پس از FM1)
+
+مرجع: [field-FM1-checklist.md](docs/field-FM1-checklist.md) · [CRM-WEB-HANDOFF-FA.md](CRM-WEB-HANDOFF-FA.md) · [operator-scale-day-fa.md](docs/operator-scale-day-fa.md)
+
+> راهنمای فردا در مغازه: مرورگر = «رویداد ترازو»؛ PC = KasehScaleBridge؛ «فروش ترازو» = فاکتور دستی اضطراری.
+
+## فاز ۳۴ — کنسول روز میدان (اولویت قبل/همزمان تست)
+- [x] کامپوننت `ScaleOpsBanner` در صفحه scale-events: وضعیت خلاصه (heartbeat، آخرین رویداد، تعداد ۲۴h، لینک سریع)
+- [x] راهنمای فارسی ثابت (۳ سناریو: Bridge OK / قطع / failed PLU)
+- [x] لینک از `PilotNav` و `SaleForm` به `/pilot/shariati/scale-events`
+- [x] باکس «تست اتصال API» (لینک به docs/ops-scale-api-key — بدون هاردکد کلید)
+
+## فاز ۳۵ — پاکسازی پیش‌فرض‌های دمو در UI فروش
+- [x] `SaleForm.tsx`: حذف state اولیه `0.225` / `1289000`؛ وزن و فی خالی تا انتخاب PLU یا اعمال بارکد
+- [x] placeholder بارکد عمومی (بدون تبلیغ POT001 در عنوان)
+- [x] هنگام تغییر PLU در select: پر کردن `unitPriceRialPerKg` از catalog API
+- [x] برچسب فرم: تفکیک «فروش دستی پنل» vs «رویداد خودکار Bridge»
+
+## فاز ۳۶ — ScaleDevice از DB (ترازو / غرفه)
+- [x] API: `GET/POST/PATCH /api/branches/[branchId]/scale-devices` (auth پنل)
+- [x] سرویس `lib/services/scale-devices.ts` — CRUD حداقلی، `isActive`
+- [x] UI: صفحه `/pilot/shariati/devices` — لیست FM1، اتصال RS232/USB
+- [x] `SaleForm`: `scaleLabel` → select از ScaleDevice.label
+- [x] حذف فیلد «غرفه»
+
+## فاز ۳۷ — مانیتور Agent بدون هاردکod FM1
+- [x] `ScaleAgentStatusWidget`: hostname از heartbeat شعبه (نه فقط FM1)
+- [x] نمایش `lastSerialDataAt` / `comPort` از payload
+- [x] حالت‌های واضح UI: آنلاین / سکوت / هرگز heartbeat نیامده
+
+## فاز ۳۸ — Catalog حرفه‌ای (داده زنده)
+- [x] `CatalogManager.tsx`: راهنمای کوتاه بدون تاکید POT001
+- [x] اعتبارسنجی کلاینت: PLU یکتا، فی برای WEIGHED_SALE
+- [x] فیلد `barcode` در فرم/API catalog
+- [x] `SaleForm`: اولویت کالای غیر POT001 در لیست پیش‌فرض
+
+## فاز ۳۹ — جریان داده برای اپراتور
+- [x] رویداد `failed`: توضیح فارسی + لینک catalog + ثبت manual
+- [x] دکمه «ثبت manual با همین داده» از روی ردیف failed
+
+## فاز ۴۰ — مستند اپراتور یک‌صفحه‌ای
+- [x] `docs/operator-scale-day-fa.md`
+- [x] لینک از `ScaleOpsBanner` + صفحه `/pilot/shariati/scale-guide`
+
+## فاز ۴۱ — تأیید
+- [x] `npm run build` (lint: خطاهای قدیمی Branches/CatalogManager باقی)
+- [x] به‌روز `field-FM1-checklist.md` با اشاره به کنسول scale-events

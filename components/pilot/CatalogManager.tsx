@@ -28,6 +28,7 @@ export default function CatalogManager() {
   const [name, setName] = useState('');
   const [type, setType] = useState<'RAW' | 'WEIGHED_SALE'>('WEIGHED_SALE');
   const [pluCode, setPluCode] = useState('');
+  const [barcode, setBarcode] = useState('');
   const [unitPriceTomanPerKg, setUnitPriceTomanPerKg] = useState('');
 
   const load = useCallback(async () => {
@@ -45,6 +46,16 @@ export default function CatalogManager() {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+  if (type === 'WEIGHED_SALE' && !pluCode.trim()) {
+      setMessage('برای فروش وزنی، کد PLU الزامی است.');
+      setLoading(false);
+      return;
+    }
+    if (type === 'WEIGHED_SALE' && !unitPriceTomanPerKg.trim()) {
+      setMessage('برای فروش وزنی، فی (تومان/کیلو) الزامی است.');
+      setLoading(false);
+      return;
+    }
     try {
       const unitPriceRialPerKg =
         type === 'WEIGHED_SALE' && unitPriceTomanPerKg
@@ -58,6 +69,7 @@ export default function CatalogManager() {
           name,
           type,
           pluCode: pluCode || undefined,
+          barcode: barcode.trim() || undefined,
           unitPriceRialPerKg,
         }),
       });
@@ -65,6 +77,7 @@ export default function CatalogManager() {
       if (!res.ok) throw new Error(translateError(data.error));
       setName('');
       setPluCode('');
+      setBarcode('');
       setUnitPriceTomanPerKg('');
       setMessage('کالا اضافه شد.');
       await load();
@@ -109,8 +122,7 @@ export default function CatalogManager() {
       <form onSubmit={handleCreate} className="bg-white p-6 rounded-3xl border-2 border-slate-100 space-y-4 max-w-2xl">
         <h3 className="text-lg font-black text-slate-800">افزودن کالا به شعبه شریعتی</h3>
         <p className="text-xs text-slate-500 font-bold leading-relaxed">
-          برای ترازو RADIN: کد PLU و فی فروش (تومان بر کیلو) را وارد کنید. بارکد stub:{' '}
-          <code className="bg-slate-100 px-1 rounded">PLU|گرم|ریال-هر-کیلو</code>
+          فروش وزنی: PLU و فی الزامی. بارکد RADIN (اختیاری) برای mapping سخت‌افزار.
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="space-y-1 sm:col-span-2">
@@ -137,11 +149,23 @@ export default function CatalogManager() {
             <label className="text-xs font-black text-slate-500">کد PLU</label>
             <input
               className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold"
-              placeholder="مثلاً POT001"
+              placeholder="مثلاً 1001"
               value={pluCode}
               onChange={(e) => setPluCode(e.target.value)}
             />
           </div>
+          {type === 'WEIGHED_SALE' && (
+            <div className="space-y-1">
+              <label className="text-xs font-black text-slate-500">بارکد RADIN (اختیاری)</label>
+              <input
+                dir="ltr"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                placeholder="626564512"
+              />
+            </div>
+          )}
           {type === 'WEIGHED_SALE' && (
             <div className="space-y-1 sm:col-span-2">
               <label className="text-xs font-black text-slate-500">فی فروش (تومان / kg)</label>

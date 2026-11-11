@@ -15,6 +15,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
   let body: {
     name?: string;
     pluCode?: string | null;
+    barcode?: string | null;
     unitPriceRialPerKg?: string | null;
     isActive?: boolean;
   };
@@ -35,6 +36,7 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     const item = await updateCatalogItem(branch.id, catalogItemId, {
       name: body.name,
       pluCode: body.pluCode,
+      barcode: body.barcode,
       unitPriceRialPerKg: unitPrice,
       isActive: body.isActive,
     });

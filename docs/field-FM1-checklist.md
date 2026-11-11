@@ -7,7 +7,7 @@
 - [ ] `SCALE_API_KEY` روی سرور = `scaleApiKey` در config شعبه
 - [ ] `npx prisma migrate deploy` روی DB تولید
 - [ ] curl preflight → 201
-- [ ] ورود پنل → `/pilot/shariati/scale-events`
+- [ ] ورود پنل → `/pilot/shariati/scale-events` (کنسول عملیات ترازو در بالای صفحه)
 
 ## PC شعبه — سریال
 
