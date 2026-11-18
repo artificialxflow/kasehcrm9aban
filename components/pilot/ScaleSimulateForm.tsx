@@ -54,7 +54,8 @@ export default function ScaleSimulateForm({ onSaved }: { onSaved?: () => void })
       const data = (await res.json()) as SimulateResponse;
       setLastResponse({ status: res.status, body: data });
       if (!data.ok) {
-        setError(data.error ?? `HTTP ${res.status}`);
+        const fa = data.fields?.message;
+        setError(fa ?? data.error ?? `HTTP ${res.status}`);
         return;
       }
       onSaved?.();

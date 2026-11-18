@@ -50,7 +50,10 @@ export async function POST(req: Request, ctx: RouteCtx) {
     return scaleOk(result.eventId, { status: 200, duplicate: true });
   }
   if (result.kind === "error") {
-    return scaleError(result.code.toLowerCase(), 422, { ingest: result.code });
+    return scaleError(result.code.toLowerCase(), 422, {
+      ingest: result.code,
+      message: result.messageFa,
+    });
   }
 
   return scaleOk(result.eventId, {

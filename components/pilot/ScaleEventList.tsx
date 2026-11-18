@@ -18,6 +18,8 @@ type ScaleEventRow = {
     source?: string;
     pluCode?: string;
     weightGrams?: number;
+    failureCode?: string;
+    failureMessageFa?: string;
   };
 };
 
@@ -189,8 +191,14 @@ export default function ScaleEventList({
                     {ev.saleInvoiceId ? (
                       <span title={ev.saleInvoiceId}>{ev.saleInvoiceId.slice(0, 8)}…</span>
                     ) : ev.status === 'failed' ? (
-                      <span className="text-rose-600" title="کد فروش در کاتالوگ نیست یا خواندن بارکد ناموفق">
-                        ناموفق
+                      <span
+                        className="text-rose-600"
+                        title={ev.rawPayload?.failureMessageFa ?? ev.rawPayload?.failureCode ?? ''}
+                      >
+                        {ev.rawPayload?.failureMessageFa
+                          ? ev.rawPayload.failureMessageFa.slice(0, 48) +
+                            (ev.rawPayload.failureMessageFa.length > 48 ? '…' : '')
+                          : 'ناموفق'}
                       </span>
                     ) : (
                       '—'
@@ -237,10 +245,14 @@ function FailedRowActions({
     Boolean(ev.rawPayload?.weightGrams) &&
     !ev.rawPayload?.pluCode &&
     !ev.rawPayload?.barcode?.includes('|');
+  const failureFa = ev.rawPayload?.failureMessageFa?.trim();
 
   return (
     <div className="flex flex-col gap-1">
-      {weightOnly ? (
+      {failureFa ? (
+        <p className="text-xs text-rose-800 font-bold leading-snug">{failureFa}</p>
+      ) : null}
+      {!failureFa && weightOnly ? (
         <p className="text-xs text-rose-800 font-bold leading-snug">
           فقط وزن رسیده — یا از پنل با «کد فروش» بفروشید، یا روی سرور (Runflare) متغیر پیش‌فرض فیله را بگذارید و سرویس را ری‌استارت کنید.
           <Link href="/pilot/shariati/fillet-guide" className="text-orange-600 underline block mt-0.5">

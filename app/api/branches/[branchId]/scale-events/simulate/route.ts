@@ -104,7 +104,10 @@ export async function POST(req: Request, ctx: RouteCtx) {
     });
   }
   if (result.kind === "error") {
-    return scaleError(result.code.toLowerCase(), 422, { ingest: result.code });
+    return scaleError(result.code.toLowerCase(), 422, {
+      ingest: result.code,
+      message: result.messageFa,
+    });
   }
 
   return scaleOk(result.eventId, {

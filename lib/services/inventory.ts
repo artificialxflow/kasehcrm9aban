@@ -43,7 +43,30 @@ export async function applyStockMovement(
 
   const nextQty = (stock?.quantityGrams ?? 0) + delta;
   if (nextQty < 0) {
-    throw new Error("INSUFFICIENT_STOCK");
+    const branch = await tx.branch.findUnique({
+      where: { id: input.branchId },
+      select: { isPilot: true, legacyId: true },
+    });
+    const allowPilotNegativeSale =
+      input.type === "SALE_OUT" && branch?.isPilot === true;
+    if (!allowPilotNegativeSale) {
+      console.error("[inventory] insufficient stock", {
+        branchId: input.branchId,
+        branchLegacyId: branch?.legacyId,
+        catalogItemId: input.catalogItemId,
+        type: input.type,
+        nextQty,
+        delta,
+      });
+      throw new Error("INSUFFICIENT_STOCK");
+    }
+    console.warn("[inventory] pilot SALE_OUT below zero (allowed)", {
+      branchId: input.branchId,
+      branchLegacyId: branch?.legacyId,
+      catalogItemId: input.catalogItemId,
+      nextQty,
+      delta,
+    });
   }
 
   await tx.branchStock.upsert({

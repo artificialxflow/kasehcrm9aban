@@ -7,6 +7,11 @@ import {
   extractBarcodeForIdempotency,
   type ScaleEventInput,
 } from "@/lib/scale-event-validate";
+import {
+  normalizeScaleProcessError,
+  scaleIngestErrorMessageFa,
+  type ScaleIngestErrorCode,
+} from "@/lib/scale-ingest-errors";
 
 export type IngestScaleEventResult =
   | {
@@ -26,8 +31,42 @@ export type IngestScaleEventResult =
   | {
       kind: "error";
       eventId: string;
-      code: "PARSE_FAILED" | "ITEM_NOT_FOUND" | "PROCESS_FAILED";
+      code: ScaleIngestErrorCode;
+      messageFa: string;
     };
+
+async function markScaleEventFailed(
+  eventId: string,
+  input: ScaleEventInput,
+  code: ScaleIngestErrorCode,
+  logContext?: Record<string, unknown>,
+): Promise<IngestScaleEventResult> {
+  const messageFa = scaleIngestErrorMessageFa(code);
+  console.error("[scale-ingest] event failed", {
+    eventId,
+    code,
+    messageFa,
+    clientEventId: input.clientEventId,
+    agent: input.deviceId ?? input.agentHostname,
+    ...logContext,
+  });
+  const basePayload =
+    input.rawPayload && typeof input.rawPayload === "object"
+      ? (input.rawPayload as Record<string, unknown>)
+      : {};
+  await prisma.scaleIntegrationEvent.update({
+    where: { id: eventId },
+    data: {
+      status: ScaleEventStatus.failed,
+      rawPayload: {
+        ...basePayload,
+        failureCode: code,
+        failureMessageFa: messageFa,
+      },
+    },
+  });
+  return { kind: "error", eventId, code, messageFa };
+}
 
 async function findByClientEventId(branchId: string, clientEventId: string) {
   return prisma.scaleIntegrationEvent.findUnique({
@@ -144,22 +183,21 @@ async function processSale(
   }
 
   if (!parsed) {
-    await prisma.scaleIntegrationEvent.update({
-      where: { id: eventId },
-      data: { status: ScaleEventStatus.failed },
+    return markScaleEventFailed(eventId, input, "PARSE_FAILED", {
+      barcode: payload.barcode,
+      weightGrams: payload.weightGrams,
+      pluCode: payload.pluCode,
+      defaultPlu: process.env.PILOT_DEFAULT_SALE_PLU?.trim() || null,
     });
-    return { kind: "error", eventId, code: "PARSE_FAILED" };
   }
 
   const catalogItem = await prisma.catalogItem.findFirst({
     where: { branchId, pluCode: parsed.pluCode },
   });
   if (!catalogItem) {
-    await prisma.scaleIntegrationEvent.update({
-      where: { id: eventId },
-      data: { status: ScaleEventStatus.failed },
+    return markScaleEventFailed(eventId, input, "ITEM_NOT_FOUND", {
+      pluCode: parsed.pluCode,
     });
-    return { kind: "error", eventId, code: "ITEM_NOT_FOUND" };
   }
 
   try {
@@ -186,13 +224,22 @@ async function processSale(
       data: { status: ScaleEventStatus.parsed, saleInvoiceId: sale.id },
     });
 
-    return { kind: "ok", eventId, saleId: sale.id };
-  } catch {
-    await prisma.scaleIntegrationEvent.update({
-      where: { id: eventId },
-      data: { status: ScaleEventStatus.failed },
+    console.info("[scale-ingest] sale created", {
+      eventId,
+      saleId: sale.id,
+      pluCode: parsed.pluCode,
+      weightGrams: parsed.weightGrams,
+      clientEventId: input.clientEventId,
     });
-    return { kind: "error", eventId, code: "PROCESS_FAILED" };
+    return { kind: "ok", eventId, saleId: sale.id };
+  } catch (err) {
+    const code = normalizeScaleProcessError(err);
+    return markScaleEventFailed(eventId, input, code, {
+      pluCode: parsed.pluCode,
+      weightGrams: parsed.weightGrams,
+      catalogItemId: catalogItem.id,
+      err: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
