@@ -1,45 +1,45 @@
-# چک‌لیست میدان — شعبه ۲ (PC FM1)
+# چک‌لیست میدان — شعبه ۲ (میز FM1)
 
 مرجع: [CRM-WEB-HANDOFF-FA.md](../CRM-WEB-HANDOFF-FA.md) · [ops-scale-api-key.md](./ops-scale-api-key.md)
 
 ## CRM (قبل از رفتن)
 
-- [ ] **فاز ۲ پنل:** SIM-CRM «مشاهده» ۲۲۵g → HTTP 201 و ردیف در لیست (بدون رفتن به مغازه)
-- [ ] `SCALE_API_KEY` روی سرور = `scaleApiKey` در config شعبه (**فاز ۳**)
-- [x] `npx prisma migrate deploy` روی DB تولید
-- [ ] `db:seed` / catalog PLU `1001` روی production در صورت خطای sale
-- [ ] curl preflight → 201
-- [ ] ورود پنل → `/pilot/shariati/scale-events` (کنسول عملیات ترازو در بالای صفحه)
+- [ ] **فاز ۲ پنل:** میز آزمایشی «مشاهده» ۲۲۵ گرم → ۲۰۱ و ردیف در لیست
+- [ ] کلید درگاه سرور = کلید در config پل (**فاز ۳**)
+- [ ] `npx prisma migrate deploy` روی DB تولید
+- [ ] `npm run db:seed` / کد فروش `1001` روی production در صورت خطای فروش
+- [ ] تست curl → ۲۰۱
+- [ ] ورود پنل → رویداد ترازو (کنسول عملیات در بالای صفحه)
 
 ## PC شعبه — سریال
 
 - [ ] پورت **COM13** (نه COM10 Intel SOL)
 - [ ] Baud **19200**, 8N1
-- [ ] کابل RS-232 به ترازو RADIN
+- [ ] کابل RS-232 به ترازو رادین
 
-## KasehScaleBridge
+## پل ترازو
 
-- [ ] `apiBase`: `https://kasehcrm.ronakcare.ir`
-- [ ] `branchId`: `"2"`
-- [ ] `scaleApiKey`: همان سرور
-- [ ] `serial.path`: `COM13`, `baudRate`: 19200
-- [ ] `--demo-post` → 200/201
-- [ ] پس از موفقیت: `livePostEnabled: true` و `--live`
-- [ ] GUI محلی: وزن زنده؛ ثبت فقط پس از تثبیت (Bridge)
+- [ ] آدرس API: `https://kasehcrm.ronakcare.ir`
+- [ ] شناسه شعبه: `"2"`
+- [ ] کلید درگاه: همان سرور
+- [ ] مسیر سریال: `COM13`, baud 19200
+- [ ] تست دمو → ۲۰۰/۲۰۱
+- [ ] پس از موفقیت: ارسال زنده فعال
+- [ ] نرم‌افزار محلی: وزن زنده؛ ثبت پس از تثبیت
 
 ## در فروشگاه — تأیید
 
-- [ ] رویداد جدید در لیست CRM (نوع فروش، FM1، clientEventId)
-- [ ] وضعیت `parsed` + فاکتور برای `sale` با PLU معتبر
-- [ ] در قطعی ترازو: ثبت **manual** از همان صفحه CRM
-- [ ] heartbeat FM1 در ویجت agent (اختیاری فاز ۴ Bridge)
+- [ ] رویداد جدید در لیست CRM (نوع فروش، FM1)
+- [ ] وضعیت موفق + فاکتور برای فروش با کد فروش معتبر
+- [ ] در قطعی ترازو: **ثبت دستی** از همان صفحه CRM
+- [ ] سیگنال FM1 در ویجت نماینده (فاز ۴)
 
 ## عیب‌یابی سریع
 
 | علامت | اقدام |
 |--------|--------|
-| 401 | کلید API |
-| 422 validation | `source` RS232/USB، وزن یا barcode |
-| failed / ITEM_NOT_FOUND | PLU در `/pilot/shariati/catalog` |
-| 422 parse_failed در SIM-CRM | «مشاهده» برای تست وزن؛ فروش فقط با PLU + فی در catalog |
-| duplicate 200 | طبیعی — idempotency |
+| ۴۰۱ | کلید درگاه |
+| ۴۲۲ اعتبارسنجی | منبع RS232/USB، وزن یا بارکد |
+| ناموفق / کالا نیست | کد فروش در کاتالوگ |
+| خطای parse در میز آزمایشی | «مشاهده» برای تست وزن؛ فروش فقط با کد فروش + فی |
+| تکراری ۲۰۰ | طبیعی — جلوگیری از ثبت دوباره |

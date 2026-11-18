@@ -11,6 +11,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:reset-pilot": "tsx prisma/scripts/reset-pilot-branch.ts",
     "db:push": "prisma db push"
   },
   "prisma": {

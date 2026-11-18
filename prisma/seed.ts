@@ -129,8 +129,7 @@ async function main() {
 
   const items = await prisma.catalogItem.findMany({ where: { branchId: pilot.id } });
   for (const item of items) {
-    const initialGrams =
-      item.type === CatalogItemType.WEIGHED_SALE && item.pluCode === "POT001" ? 50_000 : 0;
+    const initialGrams = 0;
     await prisma.branchStock.upsert({
       where: {
         branchId_catalogItemId: { branchId: pilot.id, catalogItemId: item.id },

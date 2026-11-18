@@ -1,6 +1,6 @@
 # کاسه CRM — پیگیری اجرا
 
-مرجع: [shariati.md](shariati.md) · [CRM-WEB-HANDOFF-FA.md](CRM-WEB-HANDOFF-FA.md) · [docs/fillet-pilot-flow-fa.md](docs/fillet-pilot-flow-fa.md)
+مرجع: [shariati.md](shariati.md) · [CRM-WEB-HANDOFF-FA.md](CRM-WEB-HANDOFF-FA.md) · [docs/fillet-pilot-flow-fa.md](docs/fillet-pilot-flow-fa.md) · [docs/fillet-pilot-checklist-fa.md](docs/fillet-pilot-checklist-fa.md)
 
 ---
 
@@ -8,93 +8,121 @@
 
 | | |
 |--|--|
-| **الان** | **۵أ پایلوت فیله (تست بدون ترازو)** — بعد از deploy و `PILOT_DEFAULT_SALE_PLU` |
-| **مسدودکننده Bridge** | فاز **۳** — `SCALE_API_KEY` = `scaleApiKey` روی PC |
-| **قدم بعدی** | [راهنمای فیله](/pilot/shariati/fillet-guide) → خرید ۱۰ kg خام → فروش ۳۰۰/۸۰۰g → [گزارش روز](/pilot/shariati/report) |
-| **روزانه ترازو** | `/pilot/shariati/scale-events` |
+| **الان** | **فاز ۰** (دیپلوی موفق روی Runflare) سپس **فاز ۱** (env + seed) |
+| **مسدودکننده** | بدون دیپلوی جدید + `PILOT_DEFAULT_SALE_PLU` روی سرور، فروش وزن‌تنها از میز آزمایشی دفتر **ناموفق** می‌ماند |
+| **قدم بعدی** | [راهنمای فیله](/pilot/shariati/fillet-guide) → پاکسازی شعبه ۲ (اختیاری) → خرید ۱۰ کیلو خام → فروش ۳۰۰/۵۰۰/۸۰۰ گرم → [گزارش روز](/pilot/shariati/report) |
+| **روزانه ترازو** | [رویداد ترازو](/pilot/shariati/scale-events) |
 
 ---
 
 ## فلو اجرا
 
 ```
-۲ پنل/SIM → ۳ Bridge → ۴ میدان → ۵أ فیله MVP → ۵ب BOM → ۵ج بک‌لاگ
+۰ پرود → ۱ env/DB → ۲أ پاکسازی شعبه۲ → ۲ پنل/SIM → ۳ پل ترازو → ۴ میدان → ۵أ فیله → ۵ب BOM → ۵ج بک‌لاگ
 ```
 
-1. **فاز ۱** — پلتفرم (تمام)
-2. **فاز ۲** — SIM-CRM + PLU پیش‌فرض SIM-DESK
-3. **فاز ۳** — Ops کلید API
-4. **فاز ۴** — میدان FM1
-5. **فاز ۵أ** — فیله تستی ← **پیاده‌سازی جاری**
-6. **فاز ۵ب** — BOM / گزارش ماهانه
-7. **فاز ۵ج** — سفارش آنلاین، lint، Bridge repo
+---
+
+## فاز ۰ — دیپلوی و هم‌ترازی پرود
+
+- [ ] 0.1 Runflare: `runflare update` در صورت نیاز + دیپلوی کامل (بدون قطع آپلود)
+- [ ] 0.2 پرود: UI فارسی در رویداد ترازو («جستجوی بارکد»، «کد فروش»)
+- [ ] 0.3 لوکال (اختیاری): `npm run build` روی commit دیپلوی‌شده
 
 ---
 
-## فاز ۱ — پلتفرم و پایلوت وزنی
+## فاز ۱ — env و دیتابیس (پرود)
 
-- [x] پنل، auth، Prisma، خرید/فروش/catalog، scale-events API، UI رویداد، SIM-CRM، منوی `/app`، مستندات
-
----
-
-## فاز ۲ — تست پنل و SIM-CRM
-
-- [x] 2.1–2.5 simulate، مشاهده، ingest
-- [ ] 2.6 Runflare: `migrate deploy` + `db:seed`
-- [ ] 2.7 تست prod: مشاهده + فروش PLU
-- [ ] 2.8 Runflare: `PILOT_DEFAULT_SALE_PLU=FILLET01` (با seed catalog)
-- [x] 2.9 کد: وزن‑تنها از SIM-DESK/FM1 → PLU پیش‌فرض
-- [ ] 2.10 تست: Bridge ارسال ۸۰۰g → `parsed` (بعد فاز ۳)
+- [ ] 1.1 Runflare: `SCALE_API_KEY` تنظیم شده
+- [ ] 1.2 Runflare: `PILOT_DEFAULT_SALE_PLU=FILLET01` + ری‌استارت/دیپلوی بعد از Save
+- [ ] 1.3 کنسول پرود: `npx prisma migrate deploy`
+- [ ] 1.4 کنسول پرود: `npm run db:seed` — `RAW-FILLET` + `FILLET01` با فی
 
 ---
 
-## فاز ۳ — اتصال Bridge (Ops)
+## فاز ۲أ — پاکسازی دمو شعبه شریعتی (legacyId ۲)
 
-- [ ] `SCALE_API_KEY` = `scaleApiKey` — [ops-scale-api-key.md](docs/ops-scale-api-key.md)
-- [ ] curl / demo-post / SIM-DESK → 201
-- [ ] heartbeat در کنسول
+- [x] 2أ.1 اسکریپت `npm run db:reset-pilot` — [prisma/scripts/reset-pilot-branch.ts](prisma/scripts/reset-pilot-branch.ts)
+- [x] 2أ.4 seed: موجودی اولیه دمو (`POT001`) = ۰
+- [ ] 2أ.3 پرود: `npm run db:reset-pilot` سپس `npm run db:seed` (قبل از تست فیله تمیز)
+
+---
+
+## فاز ۱ (پلتفرم — تمام)
+
+- [x] پنل، auth، Prisma، خرید/فروش/catalog، scale-events API، UI رویداد، میز آزمایشی CRM، منوی `/app`
+
+---
+
+## فاز ۲ — تست پنل و میز آزمایشی
+
+- [x] 2.1–2.5 شبیه‌سازی، مشاهده، ingest
+- [x] 2.9 کد: وزن‌تنها از میز آزمایشی دفتر → کد فروش پیش‌فرض
+- [ ] 2.7 تست prod: مشاهده + فروش با کد فروش از پنل
+- [ ] 2.10 تست prod: پل میز آزمایشی دفتر وزن‌تنها → موفق (نیاز فاز ۱.۲)
+
+---
+
+## فاز ۳ — اتصال پل ترازو (Ops)
+
+- [ ] 3.1 کلید درگاه سرور = کلید در برنامهٔ پل — [ops-scale-api-key.md](docs/ops-scale-api-key.md)
+- [ ] 3.2 تست دمو → ۲۰۱؛ سه فروش شبیه‌سازی از میز آزمایشی دفتر
+- [ ] 3.3 سیگنال زنده در کنسول رویداد ترازو
 
 ---
 
 ## فاز ۴ — میدان FM1
 
-- [ ] COM13، go-live — [field-FM1-checklist.md](docs/field-FM1-checklist.md)
+- [ ] COM13، راه‌اندازی — [field-FM1-checklist.md](docs/field-FM1-checklist.md)
 
 ---
 
-## فاز ۵أ — پایلوت فیله (MVP تستی، بدون BOM)
+## فاز ۵أ — پایلوت فیله (MVP تستی)
 
-**هدف:** خرید خام → فروش تیکه‌ای شبیه‌سازی → گزارش وزن روز. منبع: [updates/03](updates/03).
+**کد/مستند:**
 
-- [x] 5أ.1 سند [fillet-pilot-flow-fa.md](docs/fillet-pilot-flow-fa.md)
-- [x] 5أ.2 seed: RAW `RAW-FILLET` + WEIGHED `FILLET01`
-- [x] 5أ.3 صفحه [fillet-guide](/pilot/shariati/fillet-guide) + لینک در PilotNav
-- [x] 5أ.4 `.env.example` → `PILOT_DEFAULT_SALE_PLU`
-- [x] 5أ.5 ingest fallback PLU پیش‌فرض
-- [x] 5أ.6 راهنمای failed در ScaleEventList
-- [ ] 5أ.7 تست دستی: خرید ۱۰kg → ۳ فروش → گزارش روز
-- [ ] 5أ.8 تیک 2.7 / 2.10 پس از تست production
+- [x] 5أ.1 [fillet-pilot-flow-fa.md](docs/fillet-pilot-flow-fa.md)
+- [x] 5أ.2 seed فیله
+- [x] 5أ.3 [fillet-guide](/pilot/shariati/fillet-guide)
+- [x] 5أ.4–5أ.6 env، ingest، راهنمای ناموفق، UI فارسی
+- [x] 5أ.چک [fillet-pilot-checklist-fa.md](docs/fillet-pilot-checklist-fa.md)
+
+**پذیرش (ops):**
+
+- [ ] 5أ.7 خرید **۱۰ کیلوگرم** خام `RAW-FILLET`
+- [ ] 5أ.7ب سه فروش: **۳۰۰ + ۵۰۰ + ۸۰۰** گرم `FILLET01` (پنل یا پل)
+- [ ] 5أ.7ج گزارش روز: خروج فروش ≈ **۱۶۰۰ گرم**؛ موجودی فیله فروش کم شده
+- [ ] 5أ.8 تیک 2.7 + 2.10
+
+**پلن ب:** اگر پل گیر کرد → همان وزن‌ها از میز آزمایشی پنل با کد `FILLET01`.
 
 ---
 
-## فاز ۵ب — BOM و گزارش ماهانه (بعداً)
+## فاز ۶ — مستندات اپراتور (فارسی)
 
-- [ ] فرمول آرد/روغن/مرینت per kg — داده از تلگرام
-- [ ] مدل Recipe + UI `prep_in` / `prep_out`
-- [ ] گزارش مصرف نظری vs واقعی
+- [x] 6.1 [operator-scale-day-fa.md](docs/operator-scale-day-fa.md)
+- [x] 6.2 [field-FM1-checklist.md](docs/field-FM1-checklist.md)
+- [x] 6.3 [runflare-deploy.md](docs/runflare-deploy.md)
+- [x] 6.4 [fillet-pilot-checklist-fa.md](docs/fillet-pilot-checklist-fa.md)
+
+---
+
+## فاز ۵ب — BOM (بعداً)
+
+- [ ] فرمول مصرف per kg از تلگرام
+- [ ] مدل Recipe + UI ورود/خروج پخت
+- [ ] گزارش نظری vs واقعی
 
 ---
 
 ## فاز ۵ج — بک‌لاگ
 
-- [ ] سفارش آنلاین (`Customer` / `Order`)
-- [ ] KasehScaleBridge عملیاتی (repo جدا)
-- [ ] آپلود لاگ میدان، lint
+- [ ] سفارش آنلاین، repo پل ترازو، آپلود لاگ میدان، lint
 
 ---
 
-## پیوست — تاریخچه فازهای ۰–۵۱
+## پیوست
 
-جزئیات در git history.
+جزئیات تاریخی در git history.
 
-**آخرین هم‌ترازی:** ۱۴۰۴/۰۸ — فیله MVP 5أ
+**آخرین هم‌ترازی:** ۱۴۰۴/۰۸ — فازبندی پرود + reset پایلوت + چک‌لیست فیله
