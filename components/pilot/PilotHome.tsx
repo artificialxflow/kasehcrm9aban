@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import PilotNav from '@/components/pilot/PilotNav';
+import PilotFeatureBanner from '@/components/pilot/PilotFeatureBanner';
 import ScaleAgentStatusWidget from '@/components/pilot/ScaleAgentStatusWidget';
 import StockAdjustForm from '@/components/pilot/StockAdjustForm';
 import StockTable from '@/components/pilot/StockTable';
@@ -37,6 +38,7 @@ export default function PilotHome() {
         </p>
       </div>
       <PilotNav />
+      <PilotFeatureBanner />
       <ScaleAgentStatusWidget />
       <StockTable stock={stock} />
       <StockAdjustForm onSuccess={load} />

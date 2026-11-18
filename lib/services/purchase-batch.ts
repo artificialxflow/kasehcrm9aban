@@ -1,5 +1,6 @@
 import type { Prisma, PurchaseInvoice, PurchaseLine } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { findYieldRuleForRawLine } from "@/lib/services/purchase-yield";
 
 type Tx = Prisma.TransactionClient;
 
@@ -12,14 +13,7 @@ export async function createBatchForPurchaseLine(
   line: PurchaseLine,
   invoice: Pick<PurchaseInvoice, "branchId" | "purchasedAt">,
 ) {
-  const rule = await tx.purchaseYieldRule.findUnique({
-    where: {
-      branchId_rawCatalogItemId: {
-        branchId: invoice.branchId,
-        rawCatalogItemId: line.catalogItemId,
-      },
-    },
-  });
+  const rule = await findYieldRuleForRawLine(tx, invoice.branchId, line.catalogItemId);
   if (!rule) return null;
 
   const expected = expectedSellableGrams(line.weightGrams, rule.yieldBps);

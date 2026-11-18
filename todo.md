@@ -45,7 +45,7 @@
 - [x] 2أ.1 `npm run db:reset-pilot` — تراکنش و موجودی
 - [x] 2أ.1ب `npm run db:reset-pilot:full` — + کاتالوگ و دستگاه ترازو (شروع دستی؛ **بدون seed**)
 - [x] 2أ.4 seed: موجودی اولیه دمو (`POT001`) = ۰
-- [ ] 2أ.3 پرود: شروع دستی → `db:reset-pilot:full` (seed نزنید)
+- [ ] 2أ.3 پرود: `db:reset-pilot:full` — seed کامل نزنید؛ کاتالوگ دستی؛ اختیاری `db:seed-yield` پس از ثبت RAW-FILLET + FILLET01
 
 ---
 

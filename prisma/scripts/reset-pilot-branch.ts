@@ -19,7 +19,8 @@ async function main() {
   }
   const branchId = branch.id;
 
-  const deleted = await prisma.$transaction(async (tx) => {
+  const deleted = await prisma.$transaction(
+    async (tx) => {
     const events = await tx.scaleIntegrationEvent.deleteMany({ where: { branchId } });
     const tickets = await tx.scaleTicket.deleteMany({ where: { branchId } });
     const saleAllocations = await tx.saleLineBatchAllocation.deleteMany({
@@ -35,7 +36,9 @@ async function main() {
 
     let catalog = { count: 0 };
     let devices = { count: 0 };
+    let yieldRules = { count: 0 };
     if (full) {
+      yieldRules = await tx.purchaseYieldRule.deleteMany({ where: { branchId } });
       devices = await tx.scaleDevice.deleteMany({ where: { branchId } });
       catalog = await tx.catalogItem.deleteMany({ where: { branchId } });
     }
@@ -51,10 +54,13 @@ async function main() {
       stock,
       heartbeats,
       logs,
+      yieldRules,
       catalog,
       devices,
     };
-  });
+    },
+    { maxWait: 60_000, timeout: 120_000 },
+  );
 
   console.log(`پاکسازی شعبه «${branch.name}» (legacyId ${PILOT_LEGACY_ID})${full ? " — حالت کامل" : ""}:`);
   console.log(`  رویداد ترازو: ${deleted.events.count}`);
@@ -68,10 +74,11 @@ async function main() {
   console.log(`  سیگنال نماینده: ${deleted.heartbeats.count}`);
   console.log(`  آپلود لاگ: ${deleted.logs.count}`);
   if (full) {
+    console.log(`  قوانین تولید (yield): ${deleted.yieldRules.count}`);
     console.log(`  کالاهای کاتالوگ: ${deleted.catalog.count}`);
     console.log(`  دستگاه ترازو: ${deleted.devices.count}`);
     console.log("\nکاتالوگ خالی است — از پنل «کالاها و کد فروش» دستی ثبت کنید.");
-    console.log("توجه: db:seed دوباره کالاهای دمو را می‌سازد؛ برای شروع دستی seed نزنید.");
+    console.log("توجه: db:seed نزنید — کاتالوگ دستی. بعد از RAW-FILLET + FILLET01: npm run db:seed-yield (اختیاری؛ یا خودکار هنگام خرید).");
   } else {
     console.log("\nپیشنهاد: npm run db:seed برای بازسازی ردیف موجودی صفر (کاتالوگ بدون تغییر).");
     console.log("برای پاک کردن کاتالوگ هم: npm run db:reset-pilot:full");

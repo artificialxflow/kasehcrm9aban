@@ -1,5 +1,6 @@
 import { CatalogItemType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { ensureFilletYieldRule } from "@/lib/services/purchase-yield";
 
 export async function listCatalogItems(branchId: string, includeInactive = false) {
   return prisma.catalogItem.findMany({
@@ -57,6 +58,9 @@ export async function createCatalogItem(
     });
 
     return item;
+  }).then(async (item) => {
+    await ensureFilletYieldRule(branchId);
+    return item;
   });
 }
 
@@ -92,8 +96,10 @@ export async function updateCatalogItem(
   if (input.isActive !== undefined) data.isActive = input.isActive;
   if (input.barcode !== undefined) data.barcode = input.barcode?.trim() || null;
 
-  return prisma.catalogItem.update({
+  const item = await prisma.catalogItem.update({
     where: { id: catalogItemId },
     data,
   });
+  await ensureFilletYieldRule(branchId);
+  return item;
 }

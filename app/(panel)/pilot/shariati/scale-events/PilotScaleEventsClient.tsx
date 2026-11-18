@@ -9,6 +9,7 @@ import ScaleManualEntryForm from '@/components/pilot/ScaleManualEntryForm';
 import ScaleOpsBanner from '@/components/pilot/ScaleOpsBanner';
 import ScaleSimulateForm from '@/components/pilot/ScaleSimulateForm';
 import ScaleAgentLogUploadPanel from '@/components/pilot/ScaleAgentLogUpload';
+import PilotFeatureBanner from '@/components/pilot/PilotFeatureBanner';
 
 export default function PilotScaleEventsClient() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -22,6 +23,7 @@ export default function PilotScaleEventsClient() {
         </p>
       </div>
       <PilotNav />
+      <PilotFeatureBanner />
       <ScaleOpsBanner />
       <ScaleAgentStatusWidget />
       <ScaleAgentMonitor />

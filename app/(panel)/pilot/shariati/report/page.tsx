@@ -1,4 +1,5 @@
 import PilotNav from '@/components/pilot/PilotNav';
+import PilotFeatureBanner from '@/components/pilot/PilotFeatureBanner';
 import DailyReport from '@/components/pilot/DailyReport';
 import PurchaseBatchReport from '@/components/pilot/PurchaseBatchReport';
 
@@ -11,6 +12,7 @@ export default function PilotReportPage() {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <h2 className="text-2xl font-black text-slate-800">گزارش روزانه و بار خرید — پایلوت شریعتی</h2>
       <PilotNav />
+      <PilotFeatureBanner />
       <DailyReport />
       <PurchaseBatchReport />
     </div>
