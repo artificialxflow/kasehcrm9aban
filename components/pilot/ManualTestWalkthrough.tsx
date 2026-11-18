@@ -11,6 +11,7 @@ type Setup = {
   saleFillet: { name: string; pluCode: string } | null;
   yieldRule: { yieldBps: number } | null;
   readyForBatchTest: boolean;
+  readyForScaleWeightOnly?: boolean;
   batchCount: number;
   batchTotals: {
     rawGrams: number;
@@ -132,8 +133,8 @@ function StatusGrid({ setup }: { setup: Setup | null }) {
       label: `کالای خام ${setup?.rawFillet?.pluCode ?? 'RAW-FILLET'}`,
     },
     {
-      ok: setup?.saleFillet,
-      label: `فروش وزنی ${setup?.saleFillet?.pluCode ?? 'FILLET01'}`,
+      ok: setup?.readyForScaleWeightOnly ?? setup?.saleFillet,
+      label: `فروش وزنی ${setup?.saleFillet?.pluCode ?? 'FILLET01'} + فی کیلو`,
     },
     {
       ok: setup?.yieldRule || (setup?.rawFillet && setup?.saleFillet),

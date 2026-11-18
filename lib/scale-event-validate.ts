@@ -96,6 +96,8 @@ export function validateScaleEventBody(
     return { ok: false, fields: { clientEventId: "required" } };
   }
 
+  const { barcode: _dropBarcode, ...rpRest } = rp;
+
   return {
     ok: true,
     data: {
@@ -104,7 +106,7 @@ export function validateScaleEventBody(
       deviceId: deviceField,
       agentHostname: deviceField,
       rawPayload: {
-        ...rp,
+        ...rpRest,
         source,
         ...(hasBarcode ? { barcode: barcode.trim() } : {}),
         ...(pluCode ? { pluCode } : {}),

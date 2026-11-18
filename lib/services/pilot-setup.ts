@@ -19,6 +19,7 @@ export async function getPilotSetupStatus(branchId: string) {
         pluCode: PILOT_FILLET_YIELD.salePlu,
         isActive: true,
         type: CatalogItemType.WEIGHED_SALE,
+        unitPriceRialPerKg: { not: null, gt: 0n },
       },
       select: { id: true, name: true, pluCode: true, unitPriceRialPerKg: true },
     }),
@@ -62,6 +63,7 @@ export async function getPilotSetupStatus(branchId: string) {
     yieldRule: rule,
     readyForBatchTest: Boolean(raw && sale),
     readyForPurchaseBatch: Boolean(raw && sale && (rule || (raw && sale))),
+    readyForScaleWeightOnly: Boolean(sale?.unitPriceRialPerKg),
     batchCount,
     recentBatches: batches.map((b) => ({
       ...b,

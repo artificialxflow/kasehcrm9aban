@@ -4,6 +4,7 @@ import { resolveBranchId } from "@/lib/branch-resolve";
 import { requirePanelAuth } from "@/lib/panel-auth";
 import { prisma } from "@/lib/prisma";
 import { scaleError, scaleOk } from "@/lib/scale-api-response";
+import { resolveWeighedSaleForPlu } from "@/lib/catalog-sale-resolve";
 import { ingestScaleEvent } from "@/lib/services/scale-integration";
 import { validateScaleEventBody } from "@/lib/scale-event-validate";
 
@@ -55,14 +56,13 @@ export async function POST(req: Request, ctx: RouteCtx) {
   let barcode = paddedAsciiWeight(weightGrams);
 
   if (isSale && pluCode) {
-    const item = await prisma.catalogItem.findFirst({
-      where: { branchId: branch.id, pluCode, isActive: true },
-    });
-    if (!item?.unitPriceRialPerKg) {
+    const resolved = await resolveWeighedSaleForPlu(branch.id, pluCode);
+    if (resolved.kind !== "ok") {
       return scaleError("validation", 422, {
-        pluCode: "not_found_or_no_price",
+        pluCode: resolved.kind === "no_price" ? "no_unit_price" : "not_found_or_invalid_type",
       });
     }
+    const item = resolved.item;
     barcode = `${pluCode}|${weightGrams}|${item.unitPriceRialPerKg.toString()}`;
   }
 

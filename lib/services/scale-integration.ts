@@ -12,7 +12,12 @@ import {
   scaleIngestErrorMessageFa,
   type ScaleIngestErrorCode,
 } from "@/lib/scale-ingest-errors";
+import {
+  resolveWeighedSaleForPlu,
+  weighedSaleResolveToIngestCode,
+} from "@/lib/catalog-sale-resolve";
 import { resolveDefaultSalePlu } from "@/lib/pilot-default-sale-plu";
+import type { ParsedScaleBarcode } from "@/lib/scale/parse-barcode";
 
 export type IngestScaleEventResult =
   | {
@@ -105,7 +110,27 @@ async function processSale(
   input: ScaleEventInput,
 ): Promise<IngestScaleEventResult> {
   const payload = input.rawPayload;
-  let parsed = payload.barcode ? parseScaleBarcode(payload.barcode) : null;
+  let parsed: ParsedScaleBarcode | null = payload.barcode ? parseScaleBarcode(payload.barcode) : null;
+  let catalogItemId: string | null = null;
+  let catalogIngestCode: ScaleIngestErrorCode | null = null;
+
+  const attachPlu = async (plu: string, weightGrams: number) => {
+    const resolved = await resolveWeighedSaleForPlu(branchId, plu);
+    if (resolved.kind !== "ok" || !resolved.item.pluCode) {
+      catalogIngestCode =
+        resolved.kind === "ok"
+          ? "UNIT_PRICE_REQUIRED"
+          : weighedSaleResolveToIngestCode(resolved);
+      return false;
+    }
+    parsed = {
+      pluCode: resolved.item.pluCode,
+      weightGrams,
+      unitPriceRialPerKg: resolved.item.unitPriceRialPerKg,
+    };
+    catalogItemId = resolved.item.id;
+    return true;
+  };
 
   if (
     !parsed &&
@@ -113,16 +138,7 @@ async function processSale(
     payload.pluCode &&
     payload.weightGrams
   ) {
-    const item = await prisma.catalogItem.findFirst({
-      where: { branchId, pluCode: payload.pluCode },
-    });
-    if (item?.unitPriceRialPerKg) {
-      parsed = {
-        pluCode: payload.pluCode,
-        weightGrams: payload.weightGrams,
-        unitPriceRialPerKg: item.unitPriceRialPerKg,
-      };
-    }
+    await attachPlu(payload.pluCode, payload.weightGrams);
   }
 
   if (
@@ -135,30 +151,12 @@ async function processSale(
     const plu = parts[0];
     const w = parseInt(parts[1] ?? "", 10);
     if (plu && Number.isFinite(w) && w > 0) {
-      const item = await prisma.catalogItem.findFirst({
-        where: { branchId, pluCode: plu },
-      });
-      if (item?.unitPriceRialPerKg) {
-        parsed = {
-          pluCode: plu,
-          weightGrams: w,
-          unitPriceRialPerKg: item.unitPriceRialPerKg,
-        };
-      }
+      await attachPlu(plu, w);
     }
   }
 
   if (!parsed && payload.pluCode && payload.weightGrams) {
-    const item = await prisma.catalogItem.findFirst({
-      where: { branchId, pluCode: payload.pluCode },
-    });
-    if (item?.unitPriceRialPerKg) {
-      parsed = {
-        pluCode: payload.pluCode,
-        weightGrams: payload.weightGrams,
-        unitPriceRialPerKg: item.unitPriceRialPerKg,
-      };
-    }
+    await attachPlu(payload.pluCode, payload.weightGrams);
   }
 
   const defaultPlu = await resolveDefaultSalePlu(branchId);
@@ -171,30 +169,32 @@ async function processSale(
     payload.weightGrams &&
     payload.weightGrams > 0
   ) {
-    const item = await prisma.catalogItem.findFirst({
-      where: { branchId, pluCode: defaultPlu },
-    });
-    if (item?.unitPriceRialPerKg) {
-      parsed = {
-        pluCode: defaultPlu,
-        weightGrams: payload.weightGrams,
-        unitPriceRialPerKg: item.unitPriceRialPerKg,
-      };
-    }
+    await attachPlu(defaultPlu, payload.weightGrams);
   }
 
   if (!parsed) {
-    return markScaleEventFailed(eventId, input, "PARSE_FAILED", {
+    let code: ScaleIngestErrorCode = "PARSE_FAILED";
+    if (catalogIngestCode) {
+      code = catalogIngestCode;
+    } else if (defaultPlu && weightOnlyPilotDevice && payload.weightGrams) {
+      code = "ITEM_NOT_FOUND";
+    }
+    return markScaleEventFailed(eventId, input, code, {
       barcode: payload.barcode,
       weightGrams: payload.weightGrams,
       pluCode: payload.pluCode,
       defaultPlu: defaultPlu ?? null,
+      catalogIngestCode: code,
     });
   }
 
-  const catalogItem = await prisma.catalogItem.findFirst({
-    where: { branchId, pluCode: parsed.pluCode },
-  });
+  const catalogItem = catalogItemId
+    ? await prisma.catalogItem.findFirst({
+        where: { id: catalogItemId, branchId },
+      })
+    : await prisma.catalogItem.findFirst({
+        where: { branchId, pluCode: parsed.pluCode, isActive: true },
+      });
   if (!catalogItem) {
     return markScaleEventFailed(eventId, input, "ITEM_NOT_FOUND", {
       pluCode: parsed.pluCode,
