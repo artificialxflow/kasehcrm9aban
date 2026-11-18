@@ -14,8 +14,13 @@ export default function PurchaseForm({ onSuccess }: { onSuccess?: () => void }) 
   const [unitPriceRialPerKg, setUnitPriceRialPerKg] = useState('');
   const [supplierName, setSupplierName] = useState('');
   const [invoiceNo, setInvoiceNo] = useState('');
+  const [purchasedAt, setPurchasedAt] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setPurchasedAt(toLocalInputValue(new Date()));
+  }, []);
 
   useEffect(() => {
     fetch(`${base}/catalog`)
@@ -39,6 +44,7 @@ export default function PurchaseForm({ onSuccess }: { onSuccess?: () => void }) 
         body: JSON.stringify({
           invoiceNo: invoiceNo || undefined,
           supplierName: supplierName || undefined,
+          purchasedAt: purchasedAt ? new Date(purchasedAt).toISOString() : undefined,
           lines: [
             {
               catalogItemId,
@@ -62,6 +68,18 @@ export default function PurchaseForm({ onSuccess }: { onSuccess?: () => void }) 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-3xl border-2 border-slate-100 space-y-4 max-w-xl">
       <h3 className="text-lg font-black text-slate-800">ثبت خرید وزنی (مواد خام)</h3>
+      <p className="text-xs font-bold text-slate-600">
+        تاریخ تحویل بار برای گزارش بچ و پیش‌بینی فروش (مثلاً ۱۰ کیلو خام → ۹ کیلو نظری برای فیله).
+      </p>
+      <div className="space-y-1">
+        <label className="text-xs font-black text-slate-500">تاریخ و ساعت تحویل بار</label>
+        <input
+          type="datetime-local"
+          className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold"
+          value={purchasedAt}
+          onChange={(e) => setPurchasedAt(e.target.value)}
+        />
+      </div>
       <div className="space-y-1">
         <label className="text-xs font-black text-slate-500">کالا</label>
         <select
@@ -118,4 +136,9 @@ export default function PurchaseForm({ onSuccess }: { onSuccess?: () => void }) 
       {message && <p className="text-sm font-bold text-slate-600">{message}</p>}
     </form>
   );
+}
+
+function toLocalInputValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

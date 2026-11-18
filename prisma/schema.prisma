@@ -93,6 +93,8 @@ model Branch {
   scaleIntegrationEvents ScaleIntegrationEvent[]
   scaleAgentHeartbeats   ScaleAgentHeartbeat[]
   scaleAgentLogUploads   ScaleAgentLogUpload[]
+  purchaseYieldRules     PurchaseYieldRule[]
+  purchaseBatches        PurchaseBatch[]
 }
 
 model CatalogItem {
@@ -109,8 +111,12 @@ model CatalogItem {
   branch         Branch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
   branchStocks   BranchStock[]
   stockMovements StockMovement[]
-  purchaseLines  PurchaseLine[]
-  saleLines      SaleLine[]
+  purchaseLines       PurchaseLine[]
+  saleLines           SaleLine[]
+  purchaseYieldRulesRaw  PurchaseYieldRule[] @relation("YieldRuleRaw")
+  purchaseYieldRulesSale PurchaseYieldRule[] @relation("YieldRuleSale")
+  purchaseBatchesRaw     PurchaseBatch[]     @relation("BatchRaw")
+  purchaseBatchesSale    PurchaseBatch[]     @relation("BatchSale")
 
   @@index([branchId, pluCode])
 }
@@ -168,6 +174,55 @@ model PurchaseLine {
 
   purchaseInvoice PurchaseInvoice @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Cascade)
   catalogItem     CatalogItem     @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
+  purchaseBatch   PurchaseBatch?
+}
+
+model PurchaseYieldRule {
+  id                String @id @default(cuid())
+  branchId          String
+  rawCatalogItemId  String
+  saleCatalogItemId String
+  yieldBps          Int
+
+  branch          Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  rawCatalogItem  CatalogItem @relation("YieldRuleRaw", fields: [rawCatalogItemId], references: [id], onDelete: Restrict)
+  saleCatalogItem CatalogItem @relation("YieldRuleSale", fields: [saleCatalogItemId], references: [id], onDelete: Restrict)
+
+  @@unique([branchId, rawCatalogItemId])
+}
+
+model PurchaseBatch {
+  id                     String   @id @default(cuid())
+  branchId               String
+  purchaseLineId         String   @unique
+  rawCatalogItemId       String
+  saleCatalogItemId      String
+  purchasedAt            DateTime
+  rawGrams               Int
+  expectedSellableGrams  Int
+  allocatedSoldGrams     Int      @default(0)
+  createdAt              DateTime @default(now())
+
+  branch               Branch                    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  purchaseLine         PurchaseLine              @relation(fields: [purchaseLineId], references: [id], onDelete: Cascade)
+  rawCatalogItem       CatalogItem               @relation("BatchRaw", fields: [rawCatalogItemId], references: [id], onDelete: Restrict)
+  saleCatalogItem      CatalogItem               @relation("BatchSale", fields: [saleCatalogItemId], references: [id], onDelete: Restrict)
+  saleLineAllocations  SaleLineBatchAllocation[]
+
+  @@index([branchId, purchasedAt])
+}
+
+model SaleLineBatchAllocation {
+  id              String @id @default(cuid())
+  saleLineId      String
+  purchaseBatchId String
+  gramsAllocated  Int
+
+  saleLine      SaleLine      @relation(fields: [saleLineId], references: [id], onDelete: Cascade)
+  purchaseBatch PurchaseBatch @relation(fields: [purchaseBatchId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseBatchId])
+  @@index([saleLineId])
 }
 
 model SaleInvoice {
@@ -195,8 +250,9 @@ model SaleLine {
   unitPriceRialPerKg BigInt
   lineTotalRial      BigInt
 
-  saleInvoice SaleInvoice @relation(fields: [saleInvoiceId], references: [id], onDelete: Cascade)
-  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
+  saleInvoice              SaleInvoice               @relation(fields: [saleInvoiceId], references: [id], onDelete: Cascade)
+  catalogItem              CatalogItem               @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
+  purchaseBatchAllocations SaleLineBatchAllocation[]
 }
 
 model ScaleTicket {

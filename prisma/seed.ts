@@ -127,6 +127,33 @@ async function main() {
     }
   }
 
+  const rawFillet = await prisma.catalogItem.findFirst({
+    where: { branchId: pilot.id, pluCode: "RAW-FILLET" },
+  });
+  const saleFillet = await prisma.catalogItem.findFirst({
+    where: { branchId: pilot.id, pluCode: "FILLET01" },
+  });
+  if (rawFillet && saleFillet) {
+    await prisma.purchaseYieldRule.upsert({
+      where: {
+        branchId_rawCatalogItemId: {
+          branchId: pilot.id,
+          rawCatalogItemId: rawFillet.id,
+        },
+      },
+      create: {
+        branchId: pilot.id,
+        rawCatalogItemId: rawFillet.id,
+        saleCatalogItemId: saleFillet.id,
+        yieldBps: 9000,
+      },
+      update: {
+        saleCatalogItemId: saleFillet.id,
+        yieldBps: 9000,
+      },
+    });
+  }
+
   const items = await prisma.catalogItem.findMany({ where: { branchId: pilot.id } });
   for (const item of items) {
     const initialGrams = 0;

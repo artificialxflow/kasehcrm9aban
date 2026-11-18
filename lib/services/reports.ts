@@ -1,4 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import {
+  getPurchaseBatchSummary,
+  listPurchaseBatches,
+  type BatchListFilters,
+} from "@/lib/services/purchase-batch";
 
 export async function getDailyPilotReport(branchId: string, day = new Date()) {
   const start = new Date(day);
@@ -53,4 +58,34 @@ export async function getDailyPilotReport(branchId: string, day = new Date()) {
     saleOutGrams: saleOutGrams._sum.quantityGrams ?? 0,
     stock,
   };
+}
+
+export async function getPurchaseBatchReport(branchId: string, filters: BatchListFilters = {}) {
+  const batches = await listPurchaseBatches(branchId, filters);
+  const summary = await getPurchaseBatchSummary(branchId, filters);
+
+  const rows = batches.map((b) => {
+    const remainingExpected = Math.max(0, b.expectedSellableGrams - b.allocatedSoldGrams);
+    const variancePercent =
+      b.expectedSellableGrams > 0
+        ? Math.round((b.allocatedSoldGrams / b.expectedSellableGrams) * 1000) / 10
+        : null;
+    return {
+      id: b.id,
+      purchasedAt: b.purchasedAt.toISOString(),
+      invoiceNo: b.purchaseLine.purchaseInvoice.invoiceNo,
+      supplierName: b.purchaseLine.purchaseInvoice.supplierName,
+      rawName: b.rawCatalogItem.name,
+      rawPluCode: b.rawCatalogItem.pluCode,
+      saleName: b.saleCatalogItem.name,
+      salePluCode: b.saleCatalogItem.pluCode,
+      rawGrams: b.rawGrams,
+      expectedSellableGrams: b.expectedSellableGrams,
+      allocatedSoldGrams: b.allocatedSoldGrams,
+      remainingExpectedGrams: remainingExpected,
+      variancePercent,
+    };
+  });
+
+  return { summary, rows };
 }

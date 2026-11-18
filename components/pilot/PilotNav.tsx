@@ -10,7 +10,7 @@ const links = [
   { href: '/pilot/shariati/scale-events', label: 'رویداد ترازو' },
   { href: '/pilot/shariati/sales', label: 'فروش دستی' },
   { href: '/pilot/shariati/devices', label: 'دستگاه ترازو' },
-  { href: '/pilot/shariati/report', label: 'گزارش روزانه' },
+  { href: '/pilot/shariati/report', label: 'گزارش و بار خرید' },
   { href: '/pilot/shariati/fillet-guide', label: 'پایلوت فیله' },
   { href: '/pilot/shariati/scale-guide', label: 'راهنمای ترازو' },
 ];

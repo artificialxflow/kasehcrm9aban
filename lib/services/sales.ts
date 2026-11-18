@@ -2,6 +2,7 @@ import { CatalogItemType, SaleSource } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { lineTotalRial } from "@/lib/money";
 import { applyStockMovement } from "@/lib/services/inventory";
+import { allocateSaleLineToBatches } from "@/lib/services/batch-fifo";
 
 export type SaleLineInput = {
   catalogItemId: string;
@@ -69,6 +70,12 @@ export async function createSaleInvoice(
         quantityGrams: line.weightGrams,
         referenceKind: "sale_line",
         referenceId: line.id,
+      });
+      await allocateSaleLineToBatches(tx, {
+        branchId,
+        saleLineId: line.id,
+        catalogItemId: line.catalogItemId,
+        grams: line.weightGrams,
       });
     }
 

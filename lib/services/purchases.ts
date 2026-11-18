@@ -2,6 +2,7 @@ import { CatalogItemType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { lineTotalRial } from "@/lib/money";
 import { applyStockMovement } from "@/lib/services/inventory";
+import { createBatchForPurchaseLine } from "@/lib/services/purchase-batch";
 
 export type PurchaseLineInput = {
   catalogItemId: string;
@@ -60,6 +61,7 @@ export async function createPurchaseInvoice(
         referenceKind: "purchase_line",
         referenceId: line.id,
       });
+      await createBatchForPurchaseLine(tx, line, invoice);
     }
 
     return invoice;

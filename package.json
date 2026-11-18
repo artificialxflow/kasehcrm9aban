@@ -13,6 +13,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:reset-pilot": "tsx prisma/scripts/reset-pilot-branch.ts",
     "db:reset-pilot:full": "tsx prisma/scripts/reset-pilot-branch.ts --full",
+    "db:backfill-batches": "tsx prisma/scripts/backfill-purchase-batches.ts",
     "db:push": "prisma db push"
   },
   "prisma": {

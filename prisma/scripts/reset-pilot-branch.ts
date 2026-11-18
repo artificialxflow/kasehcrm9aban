@@ -22,6 +22,10 @@ async function main() {
   const deleted = await prisma.$transaction(async (tx) => {
     const events = await tx.scaleIntegrationEvent.deleteMany({ where: { branchId } });
     const tickets = await tx.scaleTicket.deleteMany({ where: { branchId } });
+    const saleAllocations = await tx.saleLineBatchAllocation.deleteMany({
+      where: { purchaseBatch: { branchId } },
+    });
+    const batches = await tx.purchaseBatch.deleteMany({ where: { branchId } });
     const sales = await tx.saleInvoice.deleteMany({ where: { branchId } });
     const purchases = await tx.purchaseInvoice.deleteMany({ where: { branchId } });
     const movements = await tx.stockMovement.deleteMany({ where: { branchId } });
@@ -36,12 +40,27 @@ async function main() {
       catalog = await tx.catalogItem.deleteMany({ where: { branchId } });
     }
 
-    return { events, tickets, sales, purchases, movements, stock, heartbeats, logs, catalog, devices };
+    return {
+      events,
+      tickets,
+      saleAllocations,
+      batches,
+      sales,
+      purchases,
+      movements,
+      stock,
+      heartbeats,
+      logs,
+      catalog,
+      devices,
+    };
   });
 
   console.log(`پاکسازی شعبه «${branch.name}» (legacyId ${PILOT_LEGACY_ID})${full ? " — حالت کامل" : ""}:`);
   console.log(`  رویداد ترازو: ${deleted.events.count}`);
   console.log(`  بلیت ترازو: ${deleted.tickets.count}`);
+  console.log(`  تخصیص فروش→بچ: ${deleted.saleAllocations.count}`);
+  console.log(`  بچ خرید: ${deleted.batches.count}`);
   console.log(`  فاکتور فروش: ${deleted.sales.count}`);
   console.log(`  فاکتور خرید: ${deleted.purchases.count}`);
   console.log(`  گردش موجودی: ${deleted.movements.count}`);

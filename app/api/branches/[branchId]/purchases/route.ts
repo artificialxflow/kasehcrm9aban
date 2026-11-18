@@ -26,15 +26,26 @@ export async function POST(req: Request, ctx: RouteCtx) {
   const body = (await req.json()) as {
     invoiceNo?: string;
     supplierName?: string;
+    purchasedAt?: string;
     lines: { catalogItemId: string; weightGrams: number; unitPriceRialPerKg: string }[];
   };
 
   if (!body.lines?.length) return errorResponse("NO_LINES");
 
   try {
+    let purchasedAt: Date | undefined;
+    if (body.purchasedAt?.trim()) {
+      const d = new Date(body.purchasedAt);
+      if (Number.isNaN(d.getTime())) {
+        return errorResponse("INVALID_PURCHASED_AT", 422);
+      }
+      purchasedAt = d;
+    }
+
     const purchase = await createPurchaseInvoice(branch.id, {
       invoiceNo: body.invoiceNo,
       supplierName: body.supplierName,
+      purchasedAt,
       lines: body.lines.map((l) => ({
         catalogItemId: l.catalogItemId,
         weightGrams: l.weightGrams,
