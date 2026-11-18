@@ -1,6 +1,6 @@
 # تحویل به تیم وب‌اپ (CRM کاسه) — ترازو رادین
 
-سند عملیاتی فارسی برای پروژهٔ سایت (`kasehcrm`). مرجع فنی کامل‌تر: [`shariati.md`](shariati.md) (در repo **KasehScaleBridge**).
+سند عملیاتی فارسی برای پروژهٔ سایت (`kasehcrm`). مرجع فنی کامل برای پنل: [`shariati.md`](shariati.md) §3–7، §9، §15 — تست Bridge بدون ترازو: [`docs/TEST-DESK-FA.md`](docs/TEST-DESK-FA.md).
 
 **پایلوت:** PC `FM1`، `branchId = 2`، API: `https://kasehcrm.ronakcare.ir`
 
@@ -23,8 +23,8 @@
 | Baud | **19200**, 8N1 |
 | فرمت زنده | `rawAscii`: فاصله + عدد + فاصله (مثلاً `     90  `) |
 | فرمت چاپ (در صورت فعال) | خط با `\|` مثل `PLU\|weight\|price` |
-| Agent | KasehScaleBridge **0.2.2+** |
-| مشکل فعلی | Demo/live POST → **401 unauthorized** (کلید API) |
+| Agent | KasehScaleBridge **0.2.6+** |
+| مشکل فعلی | **401** اگر `SCALE_API_KEY` روی سرور پر باشد و `scaleApiKey` در config شعبه خالی/متفاوت — رفع: [`docs/ops-scale-api-key.md`](docs/ops-scale-api-key.md) (todo فاز ۴۲) |
 
 ---
 
@@ -90,9 +90,10 @@
 
 ## ۴. UI وب (حداقل فاز ۱)
 
-- [ ] لیست رویدادهای ترازو برای **شعبه ۲** (`received_at`, `event_type`, وزن، PLU، `device_id`)
-- [ ] فرم **ثبت دستی** (`eventType: manual`) — وقتی Bridge آفلاین یا برق رفت
-- [ ] نمایش آخرین رویداد / خطای sync (اختیاری: آخرین heartbeat فاز ۲)
+- [x] لیست رویدادهای ترازو برای **شعبه ۲** — `/pilot/shariati/scale-events`
+- [x] فرم **ثبت دستی** (`eventType: manual`)
+- [x] کنسول عملیات + heartbeat + فرم **SIM-CRM** (شبیه‌سازی پنل)
+- [x] نمایش آخرین رویداد / آمار ۲۴h در `ScaleOpsBanner`
 
 ---
 
@@ -109,12 +110,12 @@
 
 ## ۶. چک‌لیست پیاده‌سازی CRM
 
-- [ ] Endpoint `POST .../scale-events` برای branch `2`
-- [ ] رفع **401** (`SCALE_API_KEY` سرور = `scaleApiKey` در config شعبه، یا غیرفعال موقت پایلوت با IP محدود)
-- [ ] جدول `scale_events` (+ ستون‌های `event_type`, `client_event_id`, `device_id`)
-- [ ] Idempotency روی `client_event_id`
-- [ ] UI لیست + manual entry
-- [ ] (فاز ۲) `POST .../scale-agent/heartbeat` — [`shariati.md`](shariati.md)
+- [x] Endpoint `POST .../scale-events` برای branch `2`
+- [ ] رفع **401** عملیاتی — هم‌ترازی کلید (فاز ۴۲ todo)
+- [x] جدول `ScaleIntegrationEvent` (+ `event_type`, `client_event_id`, `device_id`)
+- [x] Idempotency روی `client_event_id`
+- [x] UI لیست + manual + simulate پنل
+- [x] `POST .../scale-agent/heartbeat` + logs — [`shariati.md`](shariati.md)
 
 ---
 

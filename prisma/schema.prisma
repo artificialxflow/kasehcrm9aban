@@ -61,6 +61,18 @@ enum StaffRole {
   chef
 }
 
+model CustomerMenuItem {
+  id        String        @id @default(cuid())
+  concept   BranchConcept
+  name      String
+  priceRial Int
+  sortOrder Int           @default(0)
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+
+  @@index([concept, isActive, sortOrder])
+}
+
 model Branch {
   id        String        @id @default(cuid())
   legacyId  String?       @unique

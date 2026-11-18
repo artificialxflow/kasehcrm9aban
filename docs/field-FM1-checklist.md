@@ -5,7 +5,7 @@
 ## CRM (قبل از رفتن)
 
 - [ ] `SCALE_API_KEY` روی سرور = `scaleApiKey` در config شعبه
-- [ ] `npx prisma migrate deploy` روی DB تولید
+- [x] `npx prisma migrate deploy` روی DB تولید (تأیید todo فاز ۲۵)
 - [ ] curl preflight → 201
 - [ ] ورود پنل → `/pilot/shariati/scale-events` (کنسول عملیات ترازو در بالای صفحه)
 

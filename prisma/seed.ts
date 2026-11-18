@@ -146,6 +146,35 @@ async function main() {
     }
   }
 
+  const customerMenu: {
+    concept: BranchConcept;
+    name: string;
+    priceRial: number;
+    sortOrder: number;
+  }[] = [
+    { concept: "fried", name: "بال سوخاری اسپایسی", priceRial: 120_000, sortOrder: 1 },
+    { concept: "fried", name: "فیله سوخاری", priceRial: 180_000, sortOrder: 2 },
+    { concept: "burger", name: "مکیان برگر دوبل", priceRial: 150_000, sortOrder: 1 },
+    { concept: "burger", name: "سیب‌زمینی مخصوص", priceRial: 45_000, sortOrder: 2 },
+    { concept: "ash", name: "آش رشته مخصوص", priceRial: 95_000, sortOrder: 1 },
+    { concept: "ash", name: "حلیم گندم", priceRial: 85_000, sortOrder: 2 },
+    { concept: "cafe", name: "لاته کاراملی", priceRial: 75_000, sortOrder: 1 },
+  ];
+
+  for (const row of customerMenu) {
+    const existing = await prisma.customerMenuItem.findFirst({
+      where: { concept: row.concept, name: row.name },
+    });
+    if (!existing) {
+      await prisma.customerMenuItem.create({ data: row });
+    } else {
+      await prisma.customerMenuItem.update({
+        where: { id: existing.id },
+        data: { priceRial: row.priceRial, sortOrder: row.sortOrder, isActive: true },
+      });
+    }
+  }
+
   const adminPassword = process.env.SEED_ADMIN_PASSWORD?.trim() || "admin123";
   const passwordHash = await bcrypt.hash(adminPassword, 10);
   await prisma.staffUser.upsert({

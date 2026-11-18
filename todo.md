@@ -100,7 +100,7 @@
 - [x] API: `POST /api/branches/{id}/catalog`, `PATCH .../catalog/{itemId}`
 - [x] `/pilot/shariati/catalog` — افزودن RAW / فروش وزنی، PLU، فی، فعال/غیرفعال
 - [x] تعدیل موجودی: `POST .../stock/adjust` + فرم در خلاصه پایلوت
-- [ ] bridge واقعی USB/RS-232 — فاز ۲ عملیاتی
+- [ ] bridge واقعی USB/RS-232 — فاز ۲ عملیاتی → **فاز ۵۰** (repo KasehScaleBridge)
 
 ## فاز ۱۷ — پنل بدون mock (عملیاتی)
 - [x] `GET /api/branches`, `PATCH /api/branches/{id}`, `GET /api/dashboard`
@@ -109,7 +109,7 @@
 - [x] لیست فاکتور خرید/فروش پایلوت + polling فروش
 - [x] `SCALE_API_KEY` اختیاری برای scale-events
 - [x] Auth پنل: StaffUser + login + middleware (Customer/Order آنلاین — بعداً)
-- [ ] وب‌اپ مشتری `/app` از DB
+- [x] وب‌اپ مشتری `/app` منو از DB (`CustomerMenuItem`) — سفارش آنلاین → **فاز ۴۹** باقی
 
 ---
 
@@ -153,9 +153,9 @@
 
 ## فاز ۲۵ — Ops و رفع 401 (قبل از میدان)
 - [x] مستند [docs/ops-scale-api-key.md](docs/ops-scale-api-key.md)
-- [ ] کلید `SCALE_API_KEY` در Runflare + `scaleApiKey` در config شعبه (عملیاتی توسط شما)
+- [ ] کلید `SCALE_API_KEY` در Runflare + `scaleApiKey` در config شعبه → **فاز ۴۲**
 - [x] `npx prisma migrate deploy` روی production (No pending migrations تأیید شده)
-- [ ] curl / `--demo-post` موفق از بیرون
+- [ ] curl / `--demo-post` موفق از بیرون → **فاز ۴۲–۴۳**
 
 ## فاز ۲۶ — قرارداد API (eventType, clientEventId, agentHostname)
 - [x] migration `20251111120000_scale_event_handoff`
@@ -172,12 +172,12 @@
 
 ## فاز ۲۸ — چک‌لیست میدان FM1
 - [x] [docs/field-FM1-checklist.md](docs/field-FM1-checklist.md)
-- [ ] اجرای چک‌لیست در فروشگاه (COM13 / 19200 / demo-post / live)
+- [ ] اجرای چک‌لیست در فروشگاه (COM13 / 19200 / demo-post / live) → **فاز ۴۴–۴۵**
 
 ## فاز ۲۹ — کیفیت داده و گزارش
 - [x] شمارنده رویداد ۲۴h در UI
 - [x] فیلتر `from`/`to` در UI
-- [ ] دکمه «ثبت مجدد دستی» از روی ردیف failed (اختیاری بعدی)
+- [x] دکمه «ثبت manual با همین داده» از روی ردیف failed (فاز ۳۹ — تکراری با فاز ۲۹)
 
 ## فاز ۳۰ — rate limit و امنیت
 - [x] `lib/scale-rate-limit.ts` روی POST agent
@@ -187,11 +187,11 @@
 
 ## فاز ۳۲ — مانیتورینگ Agent
 - [x] `GET scale-agent/status?all=1` + `ScaleAgentMonitor`
-- [ ] UI آپلود لاگ agent (endpoint موجود — بعدی)
+- [x] UI آپلود لاگ agent → **فاز ۴۸** (آپلود میدان اختیاری باقی)
 
 ## فاز ۳۳ — تأیید FM1
 - [x] `npm run lint` + `npm run build` پس از این فازها
-- [ ] تیک نهایی میدان در [field-FM1-checklist.md](docs/field-FM1-checklist.md)
+- [ ] تیک نهایی میدان در [field-FM1-checklist.md](docs/field-FM1-checklist.md) → **فاز ۴۵**
 
 ---
 
@@ -242,3 +242,91 @@
 ## فاز ۴۱ — تأیید
 - [x] `npm run build` (lint: خطاهای قدیمی Branches/CatalogManager باقی)
 - [x] به‌روز `field-FM1-checklist.md` با اشاره به کنسول scale-events
+
+---
+
+# مسیر اجرا — بستن کارهای باز (آبان ۱۴۰۴)
+
+مرجع پلن و لاگ FM1: [`CRM-WEB-HANDOFF-FA.md`](CRM-WEB-HANDOFF-FA.md) · [`docs/ops-scale-api-key.md`](docs/ops-scale-api-key.md) · [`docs/field-FM1-checklist.md`](docs/field-FM1-checklist.md)
+
+| وضعیت | توضیح |
+|--------|--------|
+| **مسدودکننده** | 401 → هم‌ترازی `SCALE_API_KEY` / `scaleApiKey` (فاز ۴۲) |
+| **میدان** | COM13، listen، go-live (فاز ۴۴–۴۵) |
+| **بک‌لاگ CRM** | SIM-CRM، آپلود لاگ، منوی `/app` (فاز ۴۷–۴۹) |
+| **بک‌لاگ Bridge** | USB/RS-232 عملیاتی در repo جدا (فاز ۵۰) |
+
+## فاز ۴۲ — Ops: رفع 401 و preflight (اولویت ۰)
+
+**هدف:** اولین `POST` موفق از PC شعبه و curl — معیار: بدون `401` در لاگ Bridge؛ یک ردیف در `/pilot/shariati/scale-events`.
+
+- [ ] تولید کلید مشترک ۳۲+ کاراکتر ([ops-scale-api-key](docs/ops-scale-api-key.md))
+- [ ] `SCALE_API_KEY` در Runflare؛ redeploy در صورت نیاز
+- [ ] `scaleApiKey` در `C:\ProgramData\KasehScale\ScaleBridge\config.json` + ذخیره GUI Bridge
+- [ ] curl preflight → **201** + `{ ok: true, id }`
+- [ ] `KasehScaleBridge.exe --demo-post` بدون `http_error` 401
+- [ ] GUI: «ارسال فروش شبیه‌سازی» (SIM-DESK) → 201
+- [ ] پنل: ردیف جدید SIM-DESK یا FM1 در لیست رویداد
+
+## فاز ۴۳ — اعتبارسنجی قرارداد API (بدون COM)
+
+- [ ] duplicate همان `clientEventId` → **200**
+- [ ] body بدون `rawPayload.source` → **422** (curl یک‌بار)
+- [ ] sale + PLU معتبر → `parsed` + `saleId`
+- [ ] PLU نامعتبر → `failed` + manual از لیست
+- [ ] rate limit فقط اگر `SCALE_EVENTS_RATE_LIMIT_PER_MIN` set شده
+
+## فاز ۴۴ — میدان FM1: سریال و Listen-only
+
+- [ ] COM **13** @ **19200** 8N1 (نه COM10)
+- [ ] Listen-only → لاگ `serial_data` با `rawAscii` خوانا
+- [ ] ویجت agent: heartbeat / `lastSerialDataAt` (در صورت ارسال از Bridge)
+- [ ] `livePostEnabled: false` تا parser تأیید شود؛ صف offline روشن
+- [ ] agent نصب‌شده ≥ **0.2.6**
+
+## فاز ۴۵ — Go-live کنترل‌شده FM1
+
+- [ ] `livePostEnabled: true` یا دکمه «ثبت فروش» به‌عنوان مسیر اصلی
+- [ ] یک فروش واقعی → ردیف CRM + فاکتور
+- [ ] قطع اینترنت: صف Bridge → POST بعد از وصل
+- [ ] قطع ترازو: manual از پنل
+- [ ] اپراتور: [operator-scale-day-fa.md](docs/operator-scale-day-fa.md) + scale-guide
+- [ ] تیک نهایی [field-FM1-checklist.md](docs/field-FM1-checklist.md)
+
+## فاز ۴۶ — هم‌ترازی مستندات
+
+- [x] [`CRM-WEB-HANDOFF-FA.md`](CRM-WEB-HANDOFF-FA.md): §۴/§۶ CRM انجام‌شده؛ §۲ راهنمای 401
+- [x] [`shariati.md`](shariati.md): agent 0.2.6+؛ §13؛ کلید سرور محرمانه در Runflare
+- [x] [`field-FM1-checklist.md`](docs/field-FM1-checklist.md): migrate deploy هم‌خوان با فاز ۲۵
+
+## فاز ۴۷ — پنل: شبیه‌سازی SIM-CRM (shariati §7 / §9)
+
+- [x] `POST .../scale-events/simulate` (auth پنل، بدون افشای کلید)
+- [x] `ScaleSimulateForm.tsx` در صفحه scale-events
+- [x] نمایش status/body پاسخ در UI
+- [ ] تست دستی 225g → ردیف در لیست (بعد از فاز ۴۲)
+
+## فاز ۴۸ — UI آپلود لاگ Agent
+
+- [x] `GET/POST .../scale-agent/logs/panel` (auth پنل)
+- [x] `ScaleAgentLogUpload.tsx` — JSONL / چندخطی، لیست آخرین آپلودها
+- [ ] آپلود واقعی از فایل لاگ Bridge در میدان (اختیاری)
+
+## فاز ۴۹ — وب‌اپ مشتری `/app` از DB
+
+- [x] مدل `CustomerMenuItem` + migration + seed
+- [x] `GET /api/app/menu?concept=`
+- [x] `MenuPage` از API (بدون MOCK_MENU_ITEMS)
+- [ ] سفارش آنلاین واقعی (نیاز به مدل Customer/Order — بعداً)
+
+## فاز ۵۰ — Bridge repo: USB/RS-232 عملیاتی
+
+- [ ] parser / queue / stable weight روی FM1 (repo **KasehScaleBridge**)
+- [ ] نسخه نصب‌شده و `config.example.json` (COM13 / 19200)
+- [ ] لینک [`CRM-WEB-HANDOFF-FA.md`](CRM-WEB-HANDOFF-FA.md) در repo Bridge
+
+## فاز ۵۱ — تأیید نهایی repo CRM
+
+- [x] `npm run build` (TypeScript + compile OK؛ lint: خطاهای قدیمی Branches/ScaleEventList باقی)
+- [ ] `npm run lint` بدون خطای جدید در فایل‌های فاز ۴۷–۴۹
+- [ ] فازهای ۴۲–۴۵ (میدان) توسط ops تکمیل شود

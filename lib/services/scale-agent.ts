@@ -56,3 +56,11 @@ export async function listScaleAgentHeartbeats(branchId: string) {
     orderBy: { lastSeenAt: "desc" },
   });
 }
+
+export async function listScaleAgentLogUploads(branchId: string, take = 20) {
+  return prisma.scaleAgentLogUpload.findMany({
+    where: { branchId },
+    orderBy: { receivedAt: "desc" },
+    take,
+  });
+}

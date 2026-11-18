@@ -1,30 +1,42 @@
 ﻿'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CONCEPTS } from '@/lib/constants';
 import { useCart } from './CartContext';
 
-const MOCK_MENU_ITEMS: { id: string; name: string; price: number; concept: string }[] = [
-  { id: 'm1', name: 'بال سوخاری اسپایسی', price: 120000, concept: 'fried' },
-  { id: 'm2', name: 'فیله سوخاری', price: 180000, concept: 'fried' },
-  { id: 'm3', name: 'مکیان برگر دوبل', price: 150000, concept: 'burger' },
-  { id: 'm4', name: 'سیب‌زمینی مخصوص', price: 45000, concept: 'burger' },
-  { id: 'm5', name: 'آش رشته مخصوص', price: 95000, concept: 'ash' },
-  { id: 'm6', name: 'حلیم گندم', price: 85000, concept: 'ash' },
-  { id: 'm7', name: 'لاته کاراملی', price: 75000, concept: 'cafe' },
-];
+type MenuItem = { id: string; name: string; price: number };
 
 const MenuPage: React.FC<{ concept: string }> = ({ concept }) => {
   const { addToCart } = useCart();
   const conceptDef = CONCEPTS.find((c) => c.id === concept);
-  const items = MOCK_MENU_ITEMS.filter((m) => m.concept === concept);
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    setLoadError('');
+    fetch(`/api/app/menu?concept=${encodeURIComponent(concept)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.ok) throw new Error(data.error ?? 'menu_failed');
+        setItems(data.items ?? []);
+      })
+      .catch(() => {
+        setLoadError('بارگذاری منو از سرور ناموفق بود.');
+        setItems([]);
+      })
+      .finally(() => setLoading(false));
+  }, [concept]);
 
   if (!conceptDef) {
     return (
       <div className="p-6 text-center">
         <p className="font-bold text-slate-600">کانسپت یافت نشد.</p>
-        <Link href="/app" className="text-orange-500 font-bold mt-2 inline-block">بازگشت به انتخاب برند</Link>
+        <Link href="/app" className="text-orange-500 font-bold mt-2 inline-block">
+          بازگشت به انتخاب برند
+        </Link>
       </div>
     );
   }
@@ -40,9 +52,14 @@ const MenuPage: React.FC<{ concept: string }> = ({ concept }) => {
           سبد خرید
         </Link>
       </div>
+      {loading ? <p className="text-slate-500 font-bold text-center">در حال بارگذاری منو...</p> : null}
+      {loadError ? <p className="text-rose-600 font-bold text-center text-sm">{loadError}</p> : null}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {items.map((item) => (
-          <div key={item.id} className="p-4 bg-white rounded-2xl border-2 border-slate-100 flex items-center justify-between gap-4">
+          <div
+            key={item.id}
+            className="p-4 bg-white rounded-2xl border-2 border-slate-100 flex items-center justify-between gap-4"
+          >
             <div>
               <p className="font-black text-slate-800">{item.name}</p>
               <p className="text-sm font-bold text-orange-600">{item.price.toLocaleString()} تومان</p>
@@ -57,9 +74,9 @@ const MenuPage: React.FC<{ concept: string }> = ({ concept }) => {
           </div>
         ))}
       </div>
-      {items.length === 0 && (
+      {!loading && items.length === 0 && !loadError ? (
         <p className="text-center text-slate-500 font-bold">فعلاً آیتمی برای این برند تعریف نشده است.</p>
-      )}
+      ) : null}
     </div>
   );
 };

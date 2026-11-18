@@ -7,6 +7,8 @@ import ScaleAgentMonitor from '@/components/pilot/ScaleAgentMonitor';
 import ScaleEventList from '@/components/pilot/ScaleEventList';
 import ScaleManualEntryForm from '@/components/pilot/ScaleManualEntryForm';
 import ScaleOpsBanner from '@/components/pilot/ScaleOpsBanner';
+import ScaleSimulateForm from '@/components/pilot/ScaleSimulateForm';
+import ScaleAgentLogUploadPanel from '@/components/pilot/ScaleAgentLogUpload';
 
 export default function PilotScaleEventsClient() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -23,7 +25,9 @@ export default function PilotScaleEventsClient() {
       <ScaleOpsBanner />
       <ScaleAgentStatusWidget />
       <ScaleAgentMonitor />
+      <ScaleSimulateForm onSaved={() => setRefreshKey((k) => k + 1)} />
       <ScaleManualEntryForm onSaved={() => setRefreshKey((k) => k + 1)} />
+      <ScaleAgentLogUploadPanel />
       <ScaleEventList
         pollMs={10000}
         refreshKey={refreshKey}

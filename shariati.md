@@ -27,7 +27,7 @@
 - **v1:** هر رویداد parse‌شده = یک **HTTP POST** (نه WebSocket).
 - **لاگ خام** به‌صورت پیش‌فرض **روی PC** می‌ماند؛ آپلود batch = فاز ۲ (endpoint پایین).
 
-Agent فعلی: **v0.2.2** (GUI میدان `http://127.0.0.1:3921/` + CLI). roadmap agent: [`todo.md`](todo.md) در repo bridge.
+Agent فعلی: **v0.2.6+** (GUI + شبیه‌سازی بدون COM). roadmap: [`todo.md`](todo.md) فاز ۴۲–۴۵ · تست دسکتاپ: [`docs/TEST-DESK-FA.md`](docs/TEST-DESK-FA.md).
 
 ---
 
@@ -38,10 +38,11 @@ Agent فعلی: **v0.2.2** (GUI میدان `http://127.0.0.1:3921/` + CLI). road
 | `API_BASE` | `https://kasehcrm.ronakcare.ir` | `config.json` → `apiBase` |
 | `BRANCH_ID` | `2` | مسیر URL + `config.json` → `branchId` |
 | `SCALE_API_KEY` (agent) | `` (خالی در config شعبه) | `config.json` → `scaleApiKey` |
-| `SCALE_API_KEY` (سرور) | `____________` | env روی CRM — **بعد از تعریف کلید، اینجا و config شعبه را یکسان کنید** |
+| `SCALE_API_KEY` (سرور) | تعریف در Runflare (محرمانه) | env روی CRM — باید با `scaleApiKey` config شعبه یکی باشد — [`docs/ops-scale-api-key.md`](docs/ops-scale-api-key.md) |
 | `PILOT_HOSTNAME` | `FM1` | از لاگ agent (`hostname` در JSONL) |
 | `SERIAL_PATH_WRONG_PILOT` | `COM10` | Intel AMT SOL — **ترازو نیست** |
-| `SERIAL_BAUD_DEFAULT` | `9600` | `config.json` → `serial.baudRate` |
+| `SERIAL_PATH_PILOT` | `COM13` | `config.json` → `serial.path` |
+| `SERIAL_BAUD_DEFAULT` | `19200` | پایلوت FM1 — 9600 = نویز در لاگ |
 | `LIVE_POST_ENABLED_PILOT` | `false` | تا تست `--demo-post` و parser OK نشود `true` نکنید |
 
 ### مسیر config و لاگ روی PC شعبه
@@ -59,8 +60,8 @@ Logs:    C:\ProgramData\KasehScale\ScaleBridge\logs\bridge-YYYY-MM-DD.log
   "branchId": "2",
   "scaleApiKey": "",
   "serial": {
-    "path": "COM3",
-    "baudRate": 9600,
+    "path": "COM13",
+    "baudRate": 19200,
     "dataBits": 8,
     "stopBits": 1,
     "parity": "none"
@@ -91,45 +92,52 @@ Logs:    C:\ProgramData\KasehScale\ScaleBridge\logs\bridge-YYYY-MM-DD.log
 
 Agent (`KasehScaleBridge`) body را **بدون wrap اضافه** JSON.stringify می‌کند:
 
-**Demo (`--demo-post`):**
+**Body کامل (v0.2.4+ — همان `ScaleEventBody`):**
 
 ```json
 {
+  "eventType": "sale",
+  "clientEventId": "FM1-2026-11-17T12:00:00.000Z-a1b2c3d4",
+  "deviceId": "FM1",
   "rawPayload": {
-    "barcode": "POT001|225|1289000",
-    "source": "USB"
+    "weightGrams": 90,
+    "barcode": "     90  ",
+    "source": "RS232"
   }
 }
 ```
 
-**Live (پس از parse):** همان ساختار؛ فیلدهای داخل `rawPayload` با parser واقعی تکمیل می‌شوند، مثلاً:
+**چاپ pipe:**
 
 ```json
 {
+  "eventType": "sale",
+  "clientEventId": "...",
+  "deviceId": "FM1",
   "rawPayload": {
-    "barcode": "626564512|420000|1289000",
-    "pluCode": "1001",
+    "barcode": "POT001|225|1289000",
+    "pluCode": "POT001",
     "weightGrams": 225,
-    "source": "USB"
-  },
-  "deviceId": "____________"
+    "source": "RS232"
+  }
 }
 ```
 
-**اگر مشخص نیست:** `deviceId` — فعلاً agent نمی‌فرستد؛ در CRM اختیاری نگه دارید تا v0.2.
+**شبیه‌سازی دسکتاپ (Bridge GUI):** `deviceId: "SIM-DESK"` — برای تست بدون ترازو.
 
 ### 3.3 Schema پیشنهادی (validation CRM)
 
 ```typescript
-// قرارداد منطقی — با stack خودتان map کنید
 interface ScaleEventBody {
+  eventType?: string;       // sale | manual | test
+  clientEventId?: string;     // idempotency — الزامی عملی
+  deviceId?: string;        // FM1 | SIM-DESK | SIM-CRM
   rawPayload: {
-    barcode?: string;      // often "PLU|weight|price" or full label string
+    barcode?: string;
     pluCode?: string;
     weightGrams?: number;
     source: "USB" | "RS232";
   };
-  deviceId?: string;
 }
 ```
 
@@ -155,10 +163,19 @@ interface ScaleEventBody {
 
 ترازو ممکن است یک barcode را دوباره بفرستد.
 
-- کلید یکتا پیشنهادی: `(branch_id=2, barcode, date_trunc_minute(received_at))`
-- یا hash(body) + branch
+- **اولویت:** `(branch_id, clientEventId)` — duplicate → `200` با همان `id`
+- fallback: barcode + دقیقه
 
-**اگر مشخص نیست:** سیاست duplicate — `____________` (ignore / update / insert always)
+### 3.6 سیاست تأیید (چه چیز به CRM برود؟)
+
+| منبع | به CRM؟ |
+|------|---------|
+| استریم خام `serial_data` | **خیر** — فقط لاگ محلی |
+| Live + `stableWeightPostEnabled` | **بله** — یک POST پس از پایداری وزن |
+| دکمه «ثبت فروش» Bridge | **بله** — تأیید اپراتور |
+| خط pipe از چاپ | **بله** — فوری |
+| GUI «شبیه‌سازی» Bridge | **بله** — با `SIM-DESK` |
+| فرم **manual/test** در پنل CRM | **بله** — بدون Bridge |
 
 ---
 
@@ -236,15 +253,15 @@ POST /api/branches/:branchId/scale-events
 
 ---
 
-## 7. UI سایت (اختیاری)
+## 7. UI سایت (فاز ۱ — الزامی برای تست)
 
-- صفحه مانیتoring شعبه 2: آخرین N رویداد از `scale_events`
-- فیلتر تاریخ + جستجو barcode
+- **لیست** رویداد شعبه ۲: `received_at`, `event_type`, `weight_grams`, `plu_code`, `device_id`, `client_event_id`
+- **فرم شبیه‌سازی ترازو** (همان body §3.2): وزن (گرم)، `pluCode` اختیاری، `eventType` = `test` | `manual` | `sale` — دکمه «ارسال» → همان endpoint
+- **فرم ثبت دستی مغازه** (`eventType: manual`) وقتی Bridge آفلاین
+- دکمه **«تست اتصال API»** — یک POST نمونه FM1 90g و نمایش status
+- توضیح UI: «استریم خام ترازو به CRM نمی‌آید؛ فقط رویداد تأییدشده / simulate / manual»
 
-**اگر مشخص نیست:**
-
-- Route UI: `____________` (مثلاً `/admin/branches/2/scale-events`)
-- نقش دسترسی: `____________` (admin / branch_manager)
+Route پیشنهادی: `/admin/branches/2/scale-events` (یا معادل در پنل شما)
 
 ---
 
@@ -286,44 +303,32 @@ Body نمونه (v0.2 agent):
 
 ## 9. تست از دفتر (بدون ترازو)
 
-### 9.1 با agent روی Windows
+ماتریس چهار مسیر — جزئیات Bridge: [`docs/TEST-DESK-FA.md`](docs/TEST-DESK-FA.md)
+
+| # | مسیر | انتظار |
+|---|------|--------|
+| 1 | `npm test` در repo Bridge | 5 pass |
+| 2 | GUI `http://127.0.0.1:3921/` → شبیه‌سازی 90g → ارسال SIM-DESK | `http_post` در لاگ |
+| 3 | curl FM1 body (زیر) | ردیف در پنل CRM |
+| 4 | پنل CRM → فرم شبیه‌سازی | همان ردیف |
+
+### 9.1 Bridge GUI (0.2.4+)
+
+`Start-Bridge.cmd` → بدون Listen: preset **FM1 90g** → **اعمال** → **ارسال فروش شبیه‌سازی**.
+
+### 9.2 curl — FM1 padded 90g (PowerShell یک خط)
 
 ```powershell
-cd "C:\Users\M S\Downloads\KasehScaleBridge-v0.1.0-win-x64"
+curl.exe -sS -X POST "https://kasehcrm.ronakcare.ir/api/branches/2/scale-events" -H "Content-Type: application/json" -H "x-scale-api-key: YOUR_KEY" -d "{\"eventType\":\"sale\",\"clientEventId\":\"TEST-90g-001\",\"deviceId\":\"SIM-CRM\",\"rawPayload\":{\"weightGrams\":90,\"barcode\":\"     90  \",\"source\":\"RS232\"}}"
+```
+
+### 9.3 Demo POST از Bridge
+
+```powershell
 .\KasehScaleBridge.exe --demo-post
 ```
 
-انتظار: `Demo POST OK (200)` یا `(201)`.
-
-Config پیش‌فرض: `C:\ProgramData\KasehScale\ScaleBridge\config.json`  
-با کلید:
-
-```json
-"scaleApiKey": "____________"
-```
-
-(همان مقدار `SCALE_API_KEY` روی سرور)
-
-### 9.2 curl (معادل Postman)
-
-**بدون API key (فقط اگر سرور key نخواهد):**
-
-```bash
-curl -sS -X POST "https://kasehcrm.ronakcare.ir/api/branches/2/scale-events" \
-  -H "Content-Type: application/json" \
-  -d "{\"rawPayload\":{\"barcode\":\"POT001|225|1289000\",\"source\":\"USB\"}}"
-```
-
-**با API key:**
-
-```bash
-curl -sS -X POST "https://kasehcrm.ronakcare.ir/api/branches/2/scale-events" \
-  -H "Content-Type: application/json" \
-  -H "x-scale-api-key: ____________" \
-  -d "{\"rawPayload\":{\"barcode\":\"POT001|225|1289000\",\"source\":\"USB\"}}"
-```
-
-### 9.3 عیب‌یاب
+### 9.4 عیب‌یاب
 
 | symptom | احتمال |
 |---------|--------|
@@ -336,11 +341,11 @@ curl -sS -X POST "https://kasehcrm.ronakcare.ir/api/branches/2/scale-events" \
 
 ## 10. فعال‌سازی live در شعبه (بعد از CRM OK)
 
-1. CRM: `--demo-post` یا curl → 200/201
-2. شعبه: لاگ با `serial_data` + parser در agent به‌روز
-3. `config.json`: `"livePostEnabled": true`
-4. `.\KasehScaleBridge.exe --live`
-5. لاگ agent: `parse_ok`, `http_post` با `httpStatus` 200/201
+1. CRM: curl / Demo / simulate پنل → 200/201
+2. شعبه: COM13 @ 19200 — لاگ `serial_data` با `rawAscii` خوانا
+3. پایلوت: ترجیح **دکمه ثبت فروش** قبل از spam با Live
+4. `livePostEnabled: true` + debounce (`stableWeightPostEnabled`)
+5. لاگ: `http_post` 200/201
 
 **اگر مشخص نیست:** SLA مانیتoring (alert اگر ۱ ساعت heartbeat/رویداد نیامد): `____________`
 
@@ -370,14 +375,15 @@ curl -sS -X POST "https://kasehcrm.ronakcare.ir/api/branches/2/scale-events" \
 
 ## 13. چک‌لیست تحویل CRM (printable)
 
-- [ ] Route `POST /api/branches/2/scale-events` registered
-- [ ] Validation `rawPayload` + پاسخ 422 واضح
-- [ ] Auth `x-scale-api-key` مطابق env
-- [ ] INSERT DB + idempotency
-- [ ] تست curl و `--demo-post` موفق
-- [ ] (اختیاری) UI لیست رویدادها
-- [ ] (فاز ۲) heartbeat + log upload routes
-- [ ] مستند داخلی CRM: لینک به `docs/scale-radin-integration.md` — **اگر فایل ندارید:** از این سند به‌عنوان منبع استفاده کنید
+- [x] Route `POST /api/branches/2/scale-events` registered
+- [x] Validation `rawPayload` + پاسخ 422 واضح
+- [x] Auth `x-scale-api-key` مطابق env
+- [x] INSERT DB + idempotency
+- [ ] تست curl و `--demo-post` موفق (بعد از فاز ۴۲ ops)
+- [x] UI لیست + manual + **SIM-CRM** (`POST .../scale-events/simulate`)
+- [x] ستون‌های `event_type`, `client_event_id`, `device_id` در DB
+- [x] heartbeat + log upload (+ آپلود پنل)
+- [x] مستند: [`docs/scale-radin-integration.md`](docs/scale-radin-integration.md)
 
 ---
 
@@ -389,8 +395,26 @@ curl -sS -X POST "https://kasehcrm.ronakcare.ir/api/branches/2/scale-events" \
 | Demo body | `demoPayload()` همان فایل |
 | Config | `src/config.ts`, `config.example.json` |
 | Parser | `src/parse/radin.ts` |
+| Simulate | `src/simulate/presets.ts` |
+| تحویل فارسی | `CRM-WEB-HANDOFF-FA.md` |
 | کارهای agent | `todo.md` |
 
 ---
 
-**نسخه سند:** 2026-11-02 — هم‌تراز با agent **0.1.0**
+## 15. پرامپت آماده (Cursor — پروژه CRM)
+
+```text
+پروژه CRM کاسه (kasehcrm). branchId=2. مرجع: shariati.md در KasehScaleBridge (§3–7، §9).
+
+الزامی:
+1) POST /api/branches/2/scale-events — body ScaleEventBody با eventType, clientEventId, deviceId, rawPayload (نمونه FM1 90g در shariati §9.2)
+2) Idempotency روی clientEventId
+3) UI: لیست شعبه 2 + فرم «شبیه‌سازی ترازو» (test/manual/sale) + دکمه تست API
+4) رفع 401 — SCALE_API_KEY = config شعبه scaleApiKey
+
+تست پذیرش: فرم simulate 225g sale → ردیف در لیست؛ Bridge SIM-DESK هم همان endpoint را بزند.
+```
+
+---
+
+**نسخه سند:** 2026-11-18 — هم‌تراز با agent **0.2.6+** و todo فاز ۴۲–۵۱
