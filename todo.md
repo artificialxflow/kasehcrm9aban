@@ -8,9 +8,9 @@
 
 | | |
 |--|--|
-| **الان** | **فاز ۰** (دیپلوی موفق روی Runflare) سپس **فاز ۱** (env + seed) |
+| **الان** | دیپلوی + `migrate deploy` → [تست دستی فیله](/pilot/shariati/fillet-guide) (**بدون seed کامل**) |
 | **مسدودکننده** | بدون دیپلوی جدید + `PILOT_DEFAULT_SALE_PLU` روی سرور، فروش وزن‌تنها از میز آزمایشی دفتر **ناموفق** می‌ماند |
-| **قدم بعدی** | [راهنمای فیله](/pilot/shariati/fillet-guide) → پاکسازی شعبه ۲ (اختیاری) → خرید ۱۰ کیلو خام → فروش ۳۰۰/۵۰۰/۸۰۰ گرم → [گزارش روز](/pilot/shariati/report) |
+| **قدم بعدی** | کاتالوگ دستی → خرید ۱۰ kg + تاریخ → فروش ۳۰۰+۵۰۰+۸۰۰ g → [گزارش بار خرید](/pilot/shariati/report) · سند [manual-test-fillet-inventory-fa.md](docs/manual-test-fillet-inventory-fa.md) |
 | **روزانه ترازو** | [رویداد ترازو](/pilot/shariati/scale-events) |
 
 ---
@@ -36,7 +36,7 @@
 - [ ] 1.1 Runflare: `SCALE_API_KEY` تنظیم شده
 - [ ] 1.2 Runflare: `PILOT_DEFAULT_SALE_PLU=FILLET01` + ری‌استارت/دیپلوی بعد از Save
 - [ ] 1.3 کنسول پرود: `npx prisma migrate deploy`
-- [ ] 1.4 کنسول پرود: `npm run db:seed` — `RAW-FILLET` + `FILLET01` با فی
+- [ ] 1.4 پرود: کاتالوگ دستی `RAW-FILLET` + `FILLET01` (seed کامل نزنید) — [راهنمای تست](docs/manual-test-fillet-inventory-fa.md)
 
 ---
 
@@ -133,12 +133,12 @@
 - [x] 5ب.3.2 PurchaseBatchReport در صفحه گزارش
 - [x] 5ب.3.3 PilotNav / راهنما
 
-### ۵ب.۴ پذیرش ops
+### ۵ب.۴ پذیرش ops (دستی — [manual-test-fillet-inventory-fa.md](docs/manual-test-fillet-inventory-fa.md))
 
-- [ ] 5ب.4.1 migrate deploy پرود
-- [ ] 5ب.4.2 خرید ۱۰ کیلو با تاریخ مشخص → پیش‌بینی ۹۰۰۰ گرم
-- [ ] 5ب.4.3 سه فروش → allocated روی یک بچ (یا FIFO اگر دو خرید)
-- [ ] 5ب.4.4 گزارش: جمع خرید / پیش‌بینی / واقعی
+- [ ] 5ب.4.1 migrate deploy پرود + دیپلوی
+- [ ] 5ب.4.2 کاتالوگ دستی + خرید ۱۰ kg → پیش‌بینی **۹۰۰۰ g**
+- [ ] 5ب.4.3 فروش **۳۰۰+۵۰۰+۸۰۰** g → تخصیص **۱۶۰۰ g**
+- [ ] 5ب.4.4 گزارش بار خرید: باقی‌مانده **۷۴۰۰ g** · راهنما: `/pilot/shariati/fillet-guide`
 
 ### ۵ب.۵ BOM کامل (بعداً — خارج از MVP)
 
