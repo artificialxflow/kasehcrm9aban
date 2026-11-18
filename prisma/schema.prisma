@@ -80,8 +80,9 @@ model Branch {
   city      String
   concept   BranchConcept
   isOpen    Boolean       @default(true)
-  isPilot   Boolean       @default(false)
-  createdAt DateTime      @default(now())
+  isPilot              Boolean       @default(false)
+  pilotDefaultSalePlu  String?
+  createdAt            DateTime      @default(now())
 
   catalogItems           CatalogItem[]
   branchStocks           BranchStock[]

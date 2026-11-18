@@ -9,7 +9,7 @@
 | | |
 |--|--|
 | **الان** | دیپلوی + `migrate deploy` → [تست دستی فیله](/pilot/shariati/fillet-guide) (**بدون seed کامل**) |
-| **مسدودکننده** | بدون دیپلوی جدید + `PILOT_DEFAULT_SALE_PLU` روی سرور، فروش وزن‌تنها از میز آزمایشی دفتر **ناموفق** می‌ماند |
+| **مسدودکننده** | بدون دیپلوی جدید + کد پیش‌فرض فروش در [کاتالوگ](/pilot/shariati/catalog) (یا env `PILOT_DEFAULT_SALE_PLU`)، فروش وزن‌تنها SIM-DESK/FM1 **ناموفق** می‌ماند |
 | **قدم بعدی** | کاتالوگ دستی → خرید ۱۰ kg + تاریخ → فروش ۳۰۰+۵۰۰+۸۰۰ g → [گزارش بار خرید](/pilot/shariati/report) · سند [manual-test-fillet-inventory-fa.md](docs/manual-test-fillet-inventory-fa.md) |
 | **روزانه ترازو** | [رویداد ترازو](/pilot/shariati/scale-events) |
 
@@ -34,7 +34,7 @@
 ## فاز ۱ — env و دیتابیس (پرود)
 
 - [ ] 1.1 Runflare: `SCALE_API_KEY` تنظیم شده
-- [ ] 1.2 Runflare: `PILOT_DEFAULT_SALE_PLU=FILLET01` + ری‌استارت/دیپلوی بعد از Save
+- [ ] 1.2 پرود: در پنل کاتالوگ «کد پیش‌فرض فروش وزن‌تنها» = `FILLET01` (اختیاری env همان مقدار)
 - [ ] 1.3 کنسول پرود: `npx prisma migrate deploy`
 - [ ] 1.4 پرود: کاتالوگ دستی `RAW-FILLET` + `FILLET01` (seed کامل نزنید) — [راهنمای تست](docs/manual-test-fillet-inventory-fa.md)
 

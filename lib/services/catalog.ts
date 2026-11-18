@@ -69,6 +69,7 @@ export async function updateCatalogItem(
   catalogItemId: string,
   input: {
     name?: string;
+    type?: CatalogItemType;
     pluCode?: string | null;
     barcode?: string | null;
     unitPriceRialPerKg?: bigint | null;
@@ -89,8 +90,20 @@ export async function updateCatalogItem(
     if (dup) throw new Error("PLU_DUPLICATE");
   }
 
+  const nextType = input.type ?? existing.type;
+  if (nextType === CatalogItemType.WEIGHED_SALE) {
+    const price =
+      input.unitPriceRialPerKg !== undefined
+        ? input.unitPriceRialPerKg
+        : existing.unitPriceRialPerKg;
+    const pluFinal = plu ?? existing.pluCode;
+    if (!pluFinal?.trim()) throw new Error("PLU_REQUIRED");
+    if (price == null || price <= 0n) throw new Error("UNIT_PRICE_REQUIRED");
+  }
+
   const data: Prisma.CatalogItemUpdateInput = {};
   if (input.name !== undefined) data.name = input.name.trim();
+  if (input.type !== undefined) data.type = input.type;
   if (input.pluCode !== undefined) data.pluCode = plu;
   if (input.unitPriceRialPerKg !== undefined) data.unitPriceRialPerKg = input.unitPriceRialPerKg;
   if (input.isActive !== undefined) data.isActive = input.isActive;
@@ -102,4 +115,38 @@ export async function updateCatalogItem(
   });
   await ensureFilletYieldRule(branchId);
   return item;
+}
+
+export async function deleteCatalogItem(branchId: string, catalogItemId: string) {
+  const existing = await prisma.catalogItem.findFirst({
+    where: { id: catalogItemId, branchId },
+  });
+  if (!existing) throw new Error("NOT_FOUND");
+
+  const [saleLines, purchaseLines, movements] = await Promise.all([
+    prisma.saleLine.count({ where: { catalogItemId } }),
+    prisma.purchaseLine.count({ where: { catalogItemId } }),
+    prisma.stockMovement.count({ where: { catalogItemId } }),
+  ]);
+
+  if (saleLines + purchaseLines + movements > 0) {
+    await prisma.catalogItem.update({
+      where: { id: catalogItemId },
+      data: { isActive: false },
+    });
+    return { mode: "deactivated" as const };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.purchaseYieldRule.deleteMany({
+      where: {
+        branchId,
+        OR: [{ rawCatalogItemId: catalogItemId }, { saleCatalogItemId: catalogItemId }],
+      },
+    });
+    await tx.branchStock.deleteMany({ where: { branchId, catalogItemId } });
+    await tx.catalogItem.delete({ where: { id: catalogItemId } });
+  });
+
+  return { mode: "deleted" as const };
 }

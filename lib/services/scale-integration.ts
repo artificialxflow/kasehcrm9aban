@@ -12,6 +12,7 @@ import {
   scaleIngestErrorMessageFa,
   type ScaleIngestErrorCode,
 } from "@/lib/scale-ingest-errors";
+import { resolveDefaultSalePlu } from "@/lib/pilot-default-sale-plu";
 
 export type IngestScaleEventResult =
   | {
@@ -160,7 +161,7 @@ async function processSale(
     }
   }
 
-  const defaultPlu = process.env.PILOT_DEFAULT_SALE_PLU?.trim();
+  const defaultPlu = await resolveDefaultSalePlu(branchId);
   const agent = (input.deviceId ?? input.agentHostname ?? "").trim();
   const weightOnlyPilotDevice = agent === "SIM-DESK" || agent === "FM1";
   if (
@@ -187,7 +188,7 @@ async function processSale(
       barcode: payload.barcode,
       weightGrams: payload.weightGrams,
       pluCode: payload.pluCode,
-      defaultPlu: process.env.PILOT_DEFAULT_SALE_PLU?.trim() || null,
+      defaultPlu: defaultPlu ?? null,
     });
   }
 

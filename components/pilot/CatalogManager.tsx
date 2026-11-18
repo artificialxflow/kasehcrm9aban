@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { formatToman } from '@/lib/money';
+import { rialPerKgToTomanInput } from '@/lib/money';
 import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
 import { catalogTypeLabelFa } from '@/lib/pilot/labels-fa';
 
@@ -10,6 +10,7 @@ type CatalogItem = {
   name: string;
   type: string;
   pluCode: string | null;
+  barcode: string | null;
   unitPriceRialPerKg: string | null;
   isActive: boolean;
 };
@@ -52,11 +53,6 @@ export default function CatalogManager() {
       return;
     }
     try {
-      const unitPriceRialPerKg =
-        type === 'WEIGHED_SALE' && unitPriceTomanPerKg
-          ? String(Math.round(parseFloat(unitPriceTomanPerKg) * 10))
-          : undefined;
-
       const res = await fetch(`${base}/catalog`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,7 +61,9 @@ export default function CatalogManager() {
           type,
           pluCode: pluCode || undefined,
           barcode: barcode.trim() || undefined,
-          unitPriceRialPerKg,
+          ...(type === 'WEIGHED_SALE' && unitPriceTomanPerKg
+            ? { unitPriceTomanPerKg: unitPriceTomanPerKg.trim() }
+            : {}),
         }),
       });
       const data = await res.json();
@@ -99,17 +97,29 @@ export default function CatalogManager() {
     }
   }
 
-  async function savePrice(item: CatalogItem, tomanPerKg: string) {
-    if (!tomanPerKg.trim()) return;
-    const rial = String(Math.round(parseFloat(tomanPerKg) * 10));
-    const res = await fetch(`${base}/catalog/${item.id}`, {
+  async function patchItem(itemId: string, patch: Record<string, unknown>) {
+    const res = await fetch(`${base}/catalog/${itemId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ unitPriceRialPerKg: rial }),
+      body: JSON.stringify(patch),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'خطا');
+    if (!res.ok) throw new Error(translateError(data.error) || data.error || 'خطا');
     await load();
+  }
+
+  async function removeItem(item: CatalogItem) {
+    if (!window.confirm(`حذف «${item.name}»؟ اگر سابقهٔ خرید/فروش دارد، غیرفعال می‌شود.`)) return;
+    setMessage('');
+    try {
+      const res = await fetch(`${base}/catalog/${item.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'خطا');
+      setMessage(data.mode === 'deactivated' ? 'کالا غیرفعال شد (سابقه دارد).' : 'کالا حذف شد.');
+      await load();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'خطا');
+    }
   }
 
   return (
@@ -199,11 +209,19 @@ export default function CatalogManager() {
               <th className="px-4 py-3 font-black text-slate-500">کد فروش</th>
               <th className="px-4 py-3 font-black text-slate-500">فی (تومان/کیلو)</th>
               <th className="px-4 py-3 font-black text-slate-500">وضعیت</th>
+              <th className="px-4 py-3 font-black text-slate-500">عملیات</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {items.map((item) => (
-              <CatalogRow key={item.id} item={item} onToggle={() => toggleActive(item)} onSavePrice={savePrice} />
+              <CatalogRow
+                key={item.id}
+                item={item}
+                onToggle={() => toggleActive(item)}
+                onPatch={(patch) => patchItem(item.id, patch)}
+                onDelete={() => removeItem(item)}
+                onError={(msg) => setMessage(msg)}
+              />
             ))}
           </tbody>
         </table>
@@ -215,43 +233,109 @@ export default function CatalogManager() {
 function CatalogRow({
   item,
   onToggle,
-  onSavePrice,
+  onPatch,
+  onDelete,
+  onError,
 }: {
   item: CatalogItem;
   onToggle: () => void;
-  onSavePrice: (item: CatalogItem, toman: string) => Promise<void>;
+  onPatch: (patch: Record<string, unknown>) => Promise<void>;
+  onDelete: () => void;
+  onError: (msg: string) => void;
 }) {
-  const [editPrice, setEditPrice] = useState(
-    item.unitPriceRialPerKg ? String(Math.round(Number(item.unitPriceRialPerKg) / 10)) : '',
-  );
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(item.name);
+  const [type, setType] = useState(item.type);
+  const [pluCode, setPluCode] = useState(item.pluCode ?? '');
+  const [barcode, setBarcode] = useState(item.barcode ?? '');
+  const [priceToman, setPriceToman] = useState(rialPerKgToTomanInput(item.unitPriceRialPerKg));
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!editing) {
+      setName(item.name);
+      setType(item.type);
+      setPluCode(item.pluCode ?? '');
+      setBarcode(item.barcode ?? '');
+      setPriceToman(rialPerKgToTomanInput(item.unitPriceRialPerKg));
+    }
+  }, [item, editing]);
+
+  async function saveEdit() {
+    setSaving(true);
+    try {
+      const patch: Record<string, unknown> = {
+        name: name.trim(),
+        type,
+        pluCode: pluCode.trim() || null,
+        barcode: type === 'WEIGHED_SALE' ? barcode.trim() || null : null,
+      };
+      if (type === 'WEIGHED_SALE' && priceToman.trim()) {
+        patch.unitPriceTomanPerKg = priceToman.trim();
+      }
+      await onPatch(patch);
+      setEditing(false);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'خطا در ویرایش');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const priceCell =
+    editing && type === 'WEIGHED_SALE' ? (
+      <input
+        className="w-28 px-2 py-1 rounded-lg border border-slate-200 text-xs font-bold"
+        value={priceToman}
+        onChange={(e) => setPriceToman(e.target.value)}
+        placeholder="تومان/کیلو"
+      />
+    ) : item.type === 'WEIGHED_SALE' && item.unitPriceRialPerKg ? (
+      `${rialPerKgToTomanInput(item.unitPriceRialPerKg)} تومان`
+    ) : (
+      '—'
+    );
 
   return (
     <tr className={item.isActive ? '' : 'opacity-50 bg-slate-50'}>
-      <td className="px-4 py-3 font-bold text-slate-800">{item.name}</td>
-      <td className="px-4 py-3 text-slate-500 font-bold text-xs">{catalogTypeLabelFa(item.type)}</td>
-      <td className="px-4 py-3 font-mono text-xs">{item.pluCode ?? '—'}</td>
-      <td className="px-4 py-3">
-        {item.type === 'WEIGHED_SALE' ? (
-          <div className="flex items-center gap-2">
-            <input
-              className="w-28 px-2 py-1 rounded-lg border border-slate-200 text-xs font-bold"
-              value={editPrice}
-              onChange={(e) => setEditPrice(e.target.value)}
-            />
-            <button
-              type="button"
-              className="text-xs font-black text-orange-600"
-              onClick={() => onSavePrice(item, editPrice).catch(() => {})}
-            >
-              ذخیره
-            </button>
-          </div>
-        ) : item.unitPriceRialPerKg ? (
-          formatToman(item.unitPriceRialPerKg)
+      <td className="px-4 py-3 font-bold text-slate-800">
+        {editing ? (
+          <input
+            className="w-full min-w-[120px] px-2 py-1 rounded-lg border border-slate-200 text-xs font-bold"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         ) : (
-          '—'
+          item.name
         )}
       </td>
+      <td className="px-4 py-3 text-slate-500 font-bold text-xs">
+        {editing ? (
+          <select
+            className="px-2 py-1 rounded-lg border border-slate-200 text-xs font-bold"
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+          >
+            <option value="WEIGHED_SALE">فروش وزنی</option>
+            <option value="RAW">مواد خام</option>
+          </select>
+        ) : (
+          catalogTypeLabelFa(item.type)
+        )}
+      </td>
+      <td className="px-4 py-3 font-mono text-xs">
+        {editing ? (
+          <input
+            dir="ltr"
+            className="w-24 px-2 py-1 rounded-lg border border-slate-200 text-xs"
+            value={pluCode}
+            onChange={(e) => setPluCode(e.target.value)}
+          />
+        ) : (
+          (item.pluCode ?? '—')
+        )}
+      </td>
+      <td className="px-4 py-3">{priceCell}</td>
       <td className="px-4 py-3">
         <button
           type="button"
@@ -262,6 +346,43 @@ function CatalogRow({
         >
           {item.isActive ? 'فعال' : 'غیرفعال'}
         </button>
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex flex-wrap gap-2 items-center">
+          {editing ? (
+            <>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => saveEdit()}
+                className="text-xs font-black text-orange-600"
+              >
+                {saving ? '…' : 'ذخیره'}
+              </button>
+              <button type="button" className="text-xs font-black text-slate-500" onClick={() => setEditing(false)}>
+                انصراف
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="text-xs font-black text-orange-600" onClick={() => setEditing(true)}>
+                ویرایش
+              </button>
+              <button type="button" className="text-xs font-black text-rose-600" onClick={onDelete}>
+                حذف
+              </button>
+            </>
+          )}
+          {editing && type === 'WEIGHED_SALE' ? (
+            <input
+              dir="ltr"
+              className="w-28 px-2 py-1 rounded-lg border border-slate-200 text-[10px] font-bold"
+              placeholder="بارکد"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+            />
+          ) : null}
+        </div>
       </td>
     </tr>
   );

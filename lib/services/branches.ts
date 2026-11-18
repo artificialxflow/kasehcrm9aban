@@ -30,10 +30,20 @@ export async function listBranchesWithStats(day = new Date()) {
 
 export async function updateBranch(
   branchId: string,
-  data: { name?: string; city?: string; isOpen?: boolean },
+  data: {
+    name?: string;
+    city?: string;
+    isOpen?: boolean;
+    pilotDefaultSalePlu?: string | null;
+  },
 ) {
+  const patch: { name?: string; city?: string; isOpen?: boolean; pilotDefaultSalePlu?: string | null } =
+    { ...data };
+  if (data.pilotDefaultSalePlu !== undefined) {
+    patch.pilotDefaultSalePlu = data.pilotDefaultSalePlu?.trim() || null;
+  }
   return prisma.branch.update({
     where: { id: branchId },
-    data,
+    data: patch,
   });
 }

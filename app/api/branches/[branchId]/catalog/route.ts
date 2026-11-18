@@ -33,6 +33,7 @@ export async function POST(req: Request, ctx: RouteCtx) {
     pluCode?: string;
     barcode?: string;
     unitPriceRialPerKg?: string;
+    unitPriceTomanPerKg?: string;
   };
   try {
     body = await req.json();
@@ -45,10 +46,14 @@ export async function POST(req: Request, ctx: RouteCtx) {
     return errorResponse("INVALID_TYPE", 400);
   }
 
-  const unitPrice =
-    body.unitPriceRialPerKg != null && body.unitPriceRialPerKg !== ""
-      ? BigInt(body.unitPriceRialPerKg)
-      : null;
+  let unitPrice: bigint | null = null;
+  if (body.unitPriceTomanPerKg != null && body.unitPriceTomanPerKg !== "") {
+    const t = parseFloat(body.unitPriceTomanPerKg);
+    if (!Number.isFinite(t) || t <= 0) return errorResponse("INVALID_TOMAN", 400);
+    unitPrice = BigInt(Math.round(t * 10));
+  } else if (body.unitPriceRialPerKg != null && body.unitPriceRialPerKg !== "") {
+    unitPrice = BigInt(body.unitPriceRialPerKg);
+  }
 
   try {
     const item = await createCatalogItem(branch.id, {

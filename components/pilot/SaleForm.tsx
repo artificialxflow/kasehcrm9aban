@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { kgToGrams } from '@/lib/money';
+import { kgToGrams, rialPerKgToTomanInput, tomanPerKgToRialString } from '@/lib/money';
 import { parseScaleBarcode } from '@/lib/scale/parse-barcode';
 import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
 
@@ -27,7 +27,7 @@ export default function SaleForm({ onSuccess }: { onSuccess?: () => void }) {
   const [devices, setDevices] = useState<ScaleDevice[]>([]);
   const [catalogItemId, setCatalogItemId] = useState('');
   const [weightKg, setWeightKg] = useState('');
-  const [unitPriceRialPerKg, setUnitPriceRialPerKg] = useState('');
+  const [unitPriceTomanPerKg, setUnitPriceTomanPerKg] = useState('');
   const [scaleLabel, setScaleLabel] = useState('');
   const [scaleInvoiceNo, setScaleInvoiceNo] = useState('');
   const [rawBarcode, setRawBarcode] = useState('');
@@ -48,7 +48,7 @@ export default function SaleForm({ onSuccess }: { onSuccess?: () => void }) {
         const def = pickDefaultItem(saleItems);
         if (def) {
           setCatalogItemId(def.id);
-          if (def.unitPriceRialPerKg) setUnitPriceRialPerKg(def.unitPriceRialPerKg);
+          if (def.unitPriceRialPerKg) setUnitPriceTomanPerKg(rialPerKgToTomanInput(def.unitPriceRialPerKg));
         }
       })
       .catch(() => setMessage('خطا در بارگذاری داده'));
@@ -57,7 +57,7 @@ export default function SaleForm({ onSuccess }: { onSuccess?: () => void }) {
   function onCatalogChange(id: string) {
     setCatalogItemId(id);
     const item = items.find((i) => i.id === id);
-    if (item?.unitPriceRialPerKg) setUnitPriceRialPerKg(item.unitPriceRialPerKg);
+    if (item?.unitPriceRialPerKg) setUnitPriceTomanPerKg(rialPerKgToTomanInput(item.unitPriceRialPerKg));
   }
 
   function applyBarcode() {
@@ -69,7 +69,7 @@ export default function SaleForm({ onSuccess }: { onSuccess?: () => void }) {
     const item = items.find((i) => i.pluCode === parsed.pluCode);
     if (item) setCatalogItemId(item.id);
     setWeightKg(String(parsed.weightGrams / 1000));
-    setUnitPriceRialPerKg(parsed.unitPriceRialPerKg.toString());
+    setUnitPriceTomanPerKg(rialPerKgToTomanInput(parsed.unitPriceRialPerKg.toString()));
     setMessage('بارکد اعمال شد.');
   }
 
@@ -96,7 +96,9 @@ export default function SaleForm({ onSuccess }: { onSuccess?: () => void }) {
             {
               catalogItemId,
               weightGrams: kgToGrams(w),
-              unitPriceRialPerKg: unitPriceRialPerKg,
+              unitPriceRialPerKg: unitPriceTomanPerKg.trim()
+                ? tomanPerKgToRialString(unitPriceTomanPerKg)
+                : undefined,
             },
           ],
         }),
@@ -168,13 +170,16 @@ export default function SaleForm({ onSuccess }: { onSuccess?: () => void }) {
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-black text-slate-500">فی (ریال/کیلوگرم)</label>
+          <label className="text-xs font-black text-slate-500">فی (تومان/کیلوگرم)</label>
           <input
+            type="number"
+            min={1}
+            step="any"
             dir="ltr"
             className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold"
-            value={unitPriceRialPerKg}
-            onChange={(e) => setUnitPriceRialPerKg(e.target.value.replace(/\D/g, ''))}
-            placeholder="از catalog"
+            value={unitPriceTomanPerKg}
+            onChange={(e) => setUnitPriceTomanPerKg(e.target.value)}
+            placeholder="از کاتالوگ"
           />
         </div>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { kgToGrams } from '@/lib/money';
+import { kgToGrams, tomanPerKgToRialString } from '@/lib/money';
 import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
 
 type CatalogItem = { id: string; name: string; type: string };
@@ -11,7 +11,7 @@ export default function PurchaseForm({ onSuccess }: { onSuccess?: () => void }) 
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [catalogItemId, setCatalogItemId] = useState('');
   const [weightKg, setWeightKg] = useState('1');
-  const [unitPriceRialPerKg, setUnitPriceRialPerKg] = useState('');
+  const [unitPriceTomanPerKg, setUnitPriceTomanPerKg] = useState('');
   const [supplierName, setSupplierName] = useState('');
   const [invoiceNo, setInvoiceNo] = useState('');
   const [purchasedAt, setPurchasedAt] = useState('');
@@ -49,7 +49,7 @@ export default function PurchaseForm({ onSuccess }: { onSuccess?: () => void }) 
             {
               catalogItemId,
               weightGrams: kgToGrams(parseFloat(weightKg)),
-              unitPriceRialPerKg,
+              unitPriceRialPerKg: tomanPerKgToRialString(unitPriceTomanPerKg),
             },
           ],
         }),
@@ -105,14 +105,16 @@ export default function PurchaseForm({ onSuccess }: { onSuccess?: () => void }) 
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-black text-slate-500">فی (ریال/کیلوگرم)</label>
+          <label className="text-xs font-black text-slate-500">فی (تومان/کیلوگرم)</label>
           <input
-            type="text"
+            type="number"
+            min={1}
+            step="any"
             dir="ltr"
             className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold"
-            value={unitPriceRialPerKg}
-            onChange={(e) => setUnitPriceRialPerKg(e.target.value.replace(/\D/g, ''))}
-            placeholder="1289000"
+            value={unitPriceTomanPerKg}
+            onChange={(e) => setUnitPriceTomanPerKg(e.target.value)}
+            placeholder="128900"
           />
         </div>
       </div>
@@ -128,7 +130,7 @@ export default function PurchaseForm({ onSuccess }: { onSuccess?: () => void }) 
       </div>
       <button
         type="submit"
-        disabled={loading || !catalogItemId || !unitPriceRialPerKg}
+        disabled={loading || !catalogItemId || !unitPriceTomanPerKg.trim()}
         className="w-full py-3 rounded-2xl bg-orange-500 text-white font-black disabled:opacity-50"
       >
         {loading ? 'در حال ثبت...' : 'ثبت خرید'}

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
 
@@ -78,6 +79,12 @@ export default function ScaleSimulateForm({ onSaved }: { onSaved?: () => void })
         <strong>فروش:</strong> کد فروش الزامی → فاکتور و کسر موجودی اگر کاتالوگ درست باشد.
         <br />
         پل واقعی روی رایانهٔ شعبه است؛ اینجا برای تست از دفتر بدون کلید درگاه در مرورگر.
+        <br />
+        فروش با SIM-DESK/FM1 و فقط وزن: کد پیش‌فرض را در{' '}
+        <Link href="/pilot/shariati/catalog" className="text-emerald-800 underline">
+          کاتالوگ → تنظیم شعبه
+        </Link>{' '}
+        بگذارید (مثلاً FILLET01).
       </p>
       <div className="flex flex-wrap gap-4">
         <label className="flex flex-col gap-1">
