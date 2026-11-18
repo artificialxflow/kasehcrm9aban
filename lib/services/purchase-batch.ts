@@ -88,3 +88,33 @@ export async function getPurchaseBatchSummary(branchId: string, filters: BatchLi
         : null,
   };
 }
+
+export async function updatePurchaseBatchExpectedGrams(
+  branchId: string,
+  batchId: string,
+  expectedSellableGrams: number,
+) {
+  if (!Number.isFinite(expectedSellableGrams) || expectedSellableGrams < 1) {
+    throw new Error("INVALID_GRAMS");
+  }
+
+  const batch = await prisma.purchaseBatch.findFirst({
+    where: { id: batchId, branchId },
+    select: { id: true, allocatedSoldGrams: true, rawGrams: true },
+  });
+  if (!batch) throw new Error("NOT_FOUND");
+  if (expectedSellableGrams < batch.allocatedSoldGrams) {
+    throw new Error("BELOW_ALLOCATED");
+  }
+
+  return prisma.purchaseBatch.update({
+    where: { id: batchId },
+    data: { expectedSellableGrams },
+    select: {
+      id: true,
+      expectedSellableGrams: true,
+      allocatedSoldGrams: true,
+      rawGrams: true,
+    },
+  });
+}
