@@ -9,13 +9,14 @@ type SimulateResponse = {
   error?: string;
   duplicate?: boolean;
   saleId?: string;
+  stored?: boolean;
   fields?: Record<string, string>;
 };
 
 export default function ScaleSimulateForm({ onSaved }: { onSaved?: () => void }) {
   const base = pilotApiBase(PILOT_BRANCH_LEGACY_ID);
   const [weightGrams, setWeightGrams] = useState('225');
-  const [eventType, setEventType] = useState<'sale' | 'test'>('test');
+  const [eventType, setEventType] = useState<'observe' | 'sale'>('observe');
   const [pluCode, setPluCode] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -32,6 +33,11 @@ export default function ScaleSimulateForm({ onSaved }: { onSaved?: () => void })
     const weight = parseInt(weightGrams, 10);
     if (!Number.isFinite(weight) || weight <= 0) {
       setError('وزن (گرم) معتبر وارد کنید.');
+      setSaving(false);
+      return;
+    }
+    if (eventType === 'sale' && !pluCode.trim()) {
+      setError('برای فروش (sale) باید PLU وارد شود — مثلاً 1001');
       setSaving(false);
       return;
     }
@@ -65,8 +71,12 @@ export default function ScaleSimulateForm({ onSaved }: { onSaved?: () => void })
       className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 space-y-4"
     >
       <h3 className="text-lg font-black text-slate-800">شبیه‌سازی ترازو از پنل (SIM-CRM)</h3>
-      <p className="text-xs font-bold text-slate-600">
-        همان قرارداد Bridge بدون افشای <code className="font-mono">SCALE_API_KEY</code> — مسیر shariati §9 ماتریس #4
+      <p className="text-xs font-bold text-slate-600 leading-relaxed">
+        <strong>مشاهده:</strong> فقط وزن در لیست CRM (بدون فاکتور) — مثل دکمه فیک در مغازه برای تست.
+        <br />
+        <strong>فروش (sale):</strong> PLU الزامی → فاکتور و کسر موجودی اگر catalog درست باشد.
+        <br />
+        Bridge واقعی روی PC شعبه است؛ اینجا برای تست از دفتر بدون <code className="font-mono">SCALE_API_KEY</code> در مرورگر.
       </p>
       <div className="flex flex-wrap gap-4">
         <label className="flex flex-col gap-1">
@@ -80,18 +90,20 @@ export default function ScaleSimulateForm({ onSaved }: { onSaved?: () => void })
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-black text-slate-500">نوع رویداد</span>
+          <span className="text-xs font-black text-slate-500">نوع</span>
           <select
             value={eventType}
-            onChange={(ev) => setEventType(ev.target.value as 'sale' | 'test')}
-            className="px-3 py-2 rounded-xl border border-slate-200 text-sm font-bold"
+            onChange={(ev) => setEventType(ev.target.value as 'observe' | 'sale')}
+            className="px-3 py-2 rounded-xl border border-slate-200 text-sm font-bold min-w-[180px]"
           >
-            <option value="test">test (ذخیره sale)</option>
-            <option value="sale">sale</option>
+            <option value="observe">مشاهده (فقط ردیف در لیست)</option>
+            <option value="sale">فروش + فاکتور (نیاز PLU)</option>
           </select>
         </label>
         <label className="flex flex-col gap-1 min-w-[160px]">
-          <span className="text-xs font-black text-slate-500">PLU (اختیاری — pipe)</span>
+          <span className="text-xs font-black text-slate-500">
+            PLU {eventType === 'sale' ? '(الزامی)' : '(اختیاری)'}
+          </span>
           <input
             value={pluCode}
             onChange={(ev) => setPluCode(ev.target.value)}

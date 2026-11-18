@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { ScaleBusinessEventType } from "@prisma/client";
 import { resolveBranchId } from "@/lib/branch-resolve";
 import { requirePanelAuth } from "@/lib/panel-auth";
+import { prisma } from "@/lib/prisma";
 import { scaleError, scaleOk } from "@/lib/scale-api-response";
 import { ingestScaleEvent } from "@/lib/services/scale-integration";
 import { validateScaleEventBody } from "@/lib/scale-event-validate";
@@ -37,34 +38,56 @@ export async function POST(req: Request, ctx: RouteCtx) {
     return scaleError("validation", 422, { weightGrams: "positive_number_required" });
   }
 
-  const eventTypeRaw = b.eventType;
-  const eventType =
-    eventTypeRaw === "test"
-      ? ScaleBusinessEventType.sale
-      : eventTypeRaw === "manual"
-        ? ScaleBusinessEventType.manual
-        : ScaleBusinessEventType.sale;
+  const modeRaw = String(b.eventType ?? b.mode ?? "observe").toLowerCase();
+  const isObserve = modeRaw === "observe" || modeRaw === "test";
+  const isSale = modeRaw === "sale";
 
   const pluCode = typeof b.pluCode === "string" ? b.pluCode.trim() : "";
-  const barcode = pluCode
-    ? `${pluCode}|${weightGrams}|0`
-    : paddedAsciiWeight(weightGrams);
+
+  if (isSale && !pluCode) {
+    return scaleError("validation", 422, { pluCode: "required_for_sale" });
+  }
+
+  const eventType = isObserve
+    ? ScaleBusinessEventType.manual
+    : ScaleBusinessEventType.sale;
+
+  let barcode = paddedAsciiWeight(weightGrams);
+
+  if (isSale && pluCode) {
+    const item = await prisma.catalogItem.findFirst({
+      where: { branchId: branch.id, pluCode, isActive: true },
+    });
+    if (!item?.unitPriceRialPerKg) {
+      return scaleError("validation", 422, {
+        pluCode: "not_found_or_no_price",
+      });
+    }
+    barcode = `${pluCode}|${weightGrams}|${item.unitPriceRialPerKg.toString()}`;
+  }
+
+  if (isObserve) {
+    barcode = paddedAsciiWeight(weightGrams);
+  }
 
   const clientEventId =
     typeof b.clientEventId === "string" && b.clientEventId.trim()
       ? b.clientEventId.trim()
       : `SIM-CRM-${new Date().toISOString()}-${randomUUID().slice(0, 8)}`;
 
+  const rawPayload: Record<string, unknown> = {
+    source: "RS232" as const,
+    weightGrams,
+    barcode,
+    ...(pluCode ? { pluCode } : {}),
+    ...(isObserve ? { note: "SIM-CRM observe — بدون فاکتور خودکار" } : {}),
+  };
+
   const raw = {
     eventType,
     clientEventId,
     deviceId: "SIM-CRM",
-    rawPayload: {
-      source: "RS232" as const,
-      weightGrams,
-      barcode,
-      ...(pluCode ? { pluCode } : {}),
-    },
+    rawPayload,
   };
 
   const validated = validateScaleEventBody(raw);
@@ -86,6 +109,6 @@ export async function POST(req: Request, ctx: RouteCtx) {
 
   return scaleOk(result.eventId, {
     status: 201,
-    saleId: "saleId" in result ? result.saleId ?? undefined : undefined,
+    saleId: result.kind === "ok" ? result.saleId ?? undefined : undefined,
   });
 }

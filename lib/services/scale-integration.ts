@@ -67,6 +67,47 @@ async function processSale(
   const payload = input.rawPayload;
   let parsed = payload.barcode ? parseScaleBarcode(payload.barcode) : null;
 
+  if (
+    !parsed &&
+    payload.barcode?.includes("|") &&
+    payload.pluCode &&
+    payload.weightGrams
+  ) {
+    const item = await prisma.catalogItem.findFirst({
+      where: { branchId, pluCode: payload.pluCode },
+    });
+    if (item?.unitPriceRialPerKg) {
+      parsed = {
+        pluCode: payload.pluCode,
+        weightGrams: payload.weightGrams,
+        unitPriceRialPerKg: item.unitPriceRialPerKg,
+      };
+    }
+  }
+
+  if (
+    !parsed &&
+    payload.barcode?.includes("|") &&
+    !payload.pluCode &&
+    payload.weightGrams
+  ) {
+    const parts = payload.barcode.trim().split("|").map((p) => p.trim());
+    const plu = parts[0];
+    const w = parseInt(parts[1] ?? "", 10);
+    if (plu && Number.isFinite(w) && w > 0) {
+      const item = await prisma.catalogItem.findFirst({
+        where: { branchId, pluCode: plu },
+      });
+      if (item?.unitPriceRialPerKg) {
+        parsed = {
+          pluCode: plu,
+          weightGrams: w,
+          unitPriceRialPerKg: item.unitPriceRialPerKg,
+        };
+      }
+    }
+  }
+
   if (!parsed && payload.pluCode && payload.weightGrams) {
     const item = await prisma.catalogItem.findFirst({
       where: { branchId, pluCode: payload.pluCode },

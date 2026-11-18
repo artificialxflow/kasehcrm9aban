@@ -4,8 +4,10 @@
 
 ## CRM (قبل از رفتن)
 
-- [ ] `SCALE_API_KEY` روی سرور = `scaleApiKey` در config شعبه
-- [x] `npx prisma migrate deploy` روی DB تولید (تأیید todo فاز ۲۵)
+- [ ] **فاز ۲ پنل:** SIM-CRM «مشاهده» ۲۲۵g → HTTP 201 و ردیف در لیست (بدون رفتن به مغازه)
+- [ ] `SCALE_API_KEY` روی سرور = `scaleApiKey` در config شعبه (**فاز ۳**)
+- [x] `npx prisma migrate deploy` روی DB تولید
+- [ ] `db:seed` / catalog PLU `1001` روی production در صورت خطای sale
 - [ ] curl preflight → 201
 - [ ] ورود پنل → `/pilot/shariati/scale-events` (کنسول عملیات ترازو در بالای صفحه)
 
@@ -39,4 +41,5 @@
 | 401 | کلید API |
 | 422 validation | `source` RS232/USB، وزن یا barcode |
 | failed / ITEM_NOT_FOUND | PLU در `/pilot/shariati/catalog` |
+| 422 parse_failed در SIM-CRM | «مشاهده» برای تست وزن؛ فروش فقط با PLU + فی در catalog |
 | duplicate 200 | طبیعی — idempotency |
