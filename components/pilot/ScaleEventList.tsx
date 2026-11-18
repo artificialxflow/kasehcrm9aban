@@ -243,8 +243,22 @@ function FailedRowActions({
   ev: ScaleEventRow;
   onRetry: () => void;
 }) {
+  const weightOnly =
+    Boolean(ev.rawPayload?.weightGrams) &&
+    !ev.rawPayload?.pluCode &&
+    !ev.rawPayload?.barcode?.includes('|');
+
   return (
     <div className="flex flex-col gap-1">
+      {weightOnly ? (
+        <p className="text-xs text-rose-800 font-bold leading-snug">
+          فقط وزن —{' '}
+          <code className="font-mono">PILOT_DEFAULT_SALE_PLU</code> روی سرور یا فروش با PLU از پنل.
+          <Link href="/pilot/shariati/fillet-guide" className="text-orange-600 underline block mt-0.5">
+            راهنمای فیله
+          </Link>
+        </p>
+      ) : null}
       <Link href="/pilot/shariati/catalog" className="text-orange-600 font-black underline">
         PLU
       </Link>

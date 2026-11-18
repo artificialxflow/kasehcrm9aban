@@ -11,6 +11,8 @@ const links = [
   { href: '/pilot/shariati/sales', label: 'فروش دستی' },
   { href: '/pilot/shariati/devices', label: 'دستگاه ترازو' },
   { href: '/pilot/shariati/report', label: 'گزارش روزانه' },
+  { href: '/pilot/shariati/fillet-guide', label: 'پایلوت فیله' },
+  { href: '/pilot/shariati/scale-guide', label: 'راهنمای ترازو' },
 ];
 
 export default function PilotNav() {

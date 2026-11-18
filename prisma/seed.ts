@@ -93,6 +93,19 @@ async function main() {
       pluCode: "RAW-FLOUR",
       branchId: pilot.id,
     },
+    {
+      name: "فیله مرغ خام",
+      type: CatalogItemType.RAW,
+      pluCode: "RAW-FILLET",
+      branchId: pilot.id,
+    },
+    {
+      name: "فیله سوخاری",
+      type: CatalogItemType.WEIGHED_SALE,
+      pluCode: "FILLET01",
+      unitPriceRialPerKg: BigInt(480_000),
+      branchId: pilot.id,
+    },
   ];
 
   for (const item of catalogDefs) {

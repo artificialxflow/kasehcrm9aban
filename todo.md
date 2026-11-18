@@ -1,6 +1,6 @@
 # کاسه CRM — پیگیری اجرا
 
-مرجع فنی: [shariati.md](shariati.md) · [CRM-WEB-HANDOFF-FA.md](CRM-WEB-HANDOFF-FA.md) · [docs/field-FM1-checklist.md](docs/field-FM1-checklist.md)
+مرجع: [shariati.md](shariati.md) · [CRM-WEB-HANDOFF-FA.md](CRM-WEB-HANDOFF-FA.md) · [docs/fillet-pilot-flow-fa.md](docs/fillet-pilot-flow-fa.md)
 
 ---
 
@@ -8,91 +8,93 @@
 
 | | |
 |--|--|
-| **مسدودکنندهٔ کد (قبل از میدان)** | SIM-CRM: رفع `parse_failed` و حالت «مشاهده وزن» — **فاز ۲** |
-| **مسدودکنندهٔ ops** | هم‌ترازی `SCALE_API_KEY` / `scaleApiKey` — **فاز ۳** |
-| **قدم بعدی شما** | پنل → [رویداد ترازو](/pilot/shariati/scale-events) → SIM-CRM «مشاهده» ۲۲۵g → ردیف در لیست |
-| **صفحهٔ روزانه** | `/pilot/shariati/scale-events` |
+| **الان** | **۵أ پایلوت فیله (تست بدون ترازو)** — بعد از deploy و `PILOT_DEFAULT_SALE_PLU` |
+| **مسدودکننده Bridge** | فاز **۳** — `SCALE_API_KEY` = `scaleApiKey` روی PC |
+| **قدم بعدی** | [راهنمای فیله](/pilot/shariati/fillet-guide) → خرید ۱۰ kg خام → فروش ۳۰۰/۸۰۰g → [گزارش روز](/pilot/shariati/report) |
+| **روزانه ترازو** | `/pilot/shariati/scale-events` |
 
 ---
 
-## فلو اجرا (به ترتیب)
-
-1. **فاز ۱** — پلتفرم و پایلوت وزنی (تمام شده؛ فقط regression)
-2. **فاز ۲** — تست پنل و SIM-CRM ← **الان**
-3. **فاز ۳** — Bridge، کلید API، demo-post
-4. **فاز ۴** — میدان FM1 (COM13، go-live)
-5. **فاز ۵** — BOM فیله، سفارش آنلاین، Bridge repo
+## فلو اجرا
 
 ```
-فاز ۲ (کد+DB) → فاز ۳ (Ops) → فاز ۴ (مغازه) → فاز ۵ (محصول)
+۲ پنل/SIM → ۳ Bridge → ۴ میدان → ۵أ فیله MVP → ۵ب BOM → ۵ج بک‌لاگ
 ```
+
+1. **فاز ۱** — پلتفرم (تمام)
+2. **فاز ۲** — SIM-CRM + PLU پیش‌فرض SIM-DESK
+3. **فاز ۳** — Ops کلید API
+4. **فاز ۴** — میدان FM1
+5. **فاز ۵أ** — فیله تستی ← **پیاده‌سازی جاری**
+6. **فاز ۵ب** — BOM / گزارش ماهانه
+7. **فاز ۵ج** — سفارش آنلاین، lint، Bridge repo
 
 ---
 
 ## فاز ۱ — پلتفرم و پایلوت وزنی
 
-**هدف:** CRM شعبه ۲ برای انبار، فروش وزنی، و API ترازو آماده است.
-
-- [x] Next.js RTL، پنل مدیریت، auth، Prisma و migrations پایلوت
-- [x] خرید/فروش وزنی، catalog، گزارش، scale-events API (POST/GET)، idempotency
-- [x] UI: لیست رویداد، manual، کنسول، مانیتور agent، آپلود لاگ پنل
-- [x] SIM-CRM: `POST .../scale-events/simulate` + `ScaleSimulateForm`
-- [x] منوی مشتری `/app` از DB (`CustomerMenuItem` + `GET /api/app/menu`)
-- [x] مستندات HANDOFF، shariati، operator-scale-day
+- [x] پنل، auth، Prisma، خرید/فروش/catalog، scale-events API، UI رویداد، SIM-CRM، منوی `/app`، مستندات
 
 ---
 
-## فاز ۲ — تست پنل و SIM-CRM (اولویت کد)
+## فاز ۲ — تست پنل و SIM-CRM
 
-**هدف:** یک کلیک → ردیف در لیست؛ حالت «مشاهده» بدون فاکتور؛ «فروش» با PLU → `parsed` + `saleId`.
-
-- [x] 2.1 Endpoint simulate + UI
-- [x] 2.2 رفع `PARSE_FAILED` با PLU (فی از catalog در بارکد pipe؛ ingest fallback)
-- [x] 2.3 حالت «مشاهده» (`observe`) — `manual`، فقط وزن در لیست
-- [x] 2.4 توضیح UI: مشاهده vs فروش
-- [x] 2.5 بهبود ingest برای بارکد pipe با price=0
-- [ ] 2.6 Runflare: `npx prisma migrate deploy` + `db:seed` (migration `20251118100000_customer_menu`، PLU `1001`)
-- [ ] 2.7 تست روی production: 225g مشاهده → لیست؛ 225g + PLU 1001 فروش → `parsed`
+- [x] 2.1–2.5 simulate، مشاهده، ingest
+- [ ] 2.6 Runflare: `migrate deploy` + `db:seed`
+- [ ] 2.7 تست prod: مشاهده + فروش PLU
+- [ ] 2.8 Runflare: `PILOT_DEFAULT_SALE_PLU=FILLET01` (با seed catalog)
+- [x] 2.9 کد: وزن‑تنها از SIM-DESK/FM1 → PLU پیش‌فرض
+- [ ] 2.10 تست: Bridge ارسال ۸۰۰g → `parsed` (بعد فاز ۳)
 
 ---
 
-## فاز ۳ — اتصال Bridge و امنیت (Ops)
+## فاز ۳ — اتصال Bridge (Ops)
 
-**هدف:** بدون 401؛ heartbeat در کنسول.
-
-- [ ] تولید و ست `SCALE_API_KEY` = `scaleApiKey` — [docs/ops-scale-api-key.md](docs/ops-scale-api-key.md)
-- [ ] curl preflight → 201
-- [ ] `KasehScaleBridge.exe --demo-post` و SIM-DESK از GUI → 201
-- [ ] heartbeat FM1 در `ScaleOpsBanner`
+- [ ] `SCALE_API_KEY` = `scaleApiKey` — [ops-scale-api-key.md](docs/ops-scale-api-key.md)
+- [ ] curl / demo-post / SIM-DESK → 201
+- [ ] heartbeat در کنسول
 
 ---
 
 ## فاز ۴ — میدان FM1
 
-**هدف:** وزن زنده؛ فقط رویداد تأییدشده به CRM. چک‌لیست کامل: [field-FM1-checklist.md](docs/field-FM1-checklist.md)
-
-- [ ] 4.1 COM13 @ 19200، listen-only، `serial_data` در لاگ
-- [ ] 4.2 `livePostEnabled: false` اول؛ دکمه «ثبت فروش» Bridge
-- [ ] 4.3 یک فروش واقعی → فاکتور CRM
-- [ ] 4.4 قطع اینترنت (صف) و manual از پنل
-- [ ] 4.5 تیک نهایی field-FM1-checklist
+- [ ] COM13، go-live — [field-FM1-checklist.md](docs/field-FM1-checklist.md)
 
 ---
 
-## فاز ۵ — محصول و بک‌لاگ (بعد از میدان)
+## فاز ۵أ — پایلوت فیله (MVP تستی، بدون BOM)
 
-- [ ] فرمول مواد / فیله / گزارش ماهانه — [updates/03/01.txt](updates/03/01.txt)
-- [ ] سفارش آنلاین واقعی (`Customer` / `Order` در Prisma)
-- [ ] KasehScaleBridge عملیاتی (repo جدا): queue، stable weight، FM1
-- [ ] تست آپلود JSONL لاگ در میدان (UI آماده)
-- [ ] `npm run lint` بدون خطای باقی‌مانده (Branches، ScaleEventList)
+**هدف:** خرید خام → فروش تیکه‌ای شبیه‌سازی → گزارش وزن روز. منبع: [updates/03](updates/03).
+
+- [x] 5أ.1 سند [fillet-pilot-flow-fa.md](docs/fillet-pilot-flow-fa.md)
+- [x] 5أ.2 seed: RAW `RAW-FILLET` + WEIGHED `FILLET01`
+- [x] 5أ.3 صفحه [fillet-guide](/pilot/shariati/fillet-guide) + لینک در PilotNav
+- [x] 5أ.4 `.env.example` → `PILOT_DEFAULT_SALE_PLU`
+- [x] 5أ.5 ingest fallback PLU پیش‌فرض
+- [x] 5أ.6 راهنمای failed در ScaleEventList
+- [ ] 5أ.7 تست دستی: خرید ۱۰kg → ۳ فروش → گزارش روز
+- [ ] 5أ.8 تیک 2.7 / 2.10 پس از تست production
 
 ---
 
-## پیوست — خلاصهٔ تاریخچه (فازهای قدیمی ۰–۵۱)
+## فاز ۵ب — BOM و گزارش ماهانه (بعداً)
 
-جزئیات در git history. نگاشت: فاز ۰–۸ مهاجرت Next؛ ۹–۱۷ پایلوت وزنی؛ ۱۸–۴۱ ترازو/RADIN/UX اپراتور؛ بخش ۴۲–۵۱ به فاز ۲–۵ بالا منتقل شد.
+- [ ] فرمول آرد/روغن/مرینت per kg — داده از تلگرام
+- [ ] مدل Recipe + UI `prep_in` / `prep_out`
+- [ ] گزارش مصرف نظری vs واقعی
 
 ---
 
-**آخرین هم‌ترازی todo:** ۱۴۰۴/۰۸ — ساختار ۵ فاز
+## فاز ۵ج — بک‌لاگ
+
+- [ ] سفارش آنلاین (`Customer` / `Order`)
+- [ ] KasehScaleBridge عملیاتی (repo جدا)
+- [ ] آپلود لاگ میدان، lint
+
+---
+
+## پیوست — تاریخچه فازهای ۰–۵۱
+
+جزئیات در git history.
+
+**آخرین هم‌ترازی:** ۱۴۰۴/۰۸ — فیله MVP 5أ

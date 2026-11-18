@@ -121,6 +121,28 @@ async function processSale(
     }
   }
 
+  const defaultPlu = process.env.PILOT_DEFAULT_SALE_PLU?.trim();
+  const agent = (input.deviceId ?? input.agentHostname ?? "").trim();
+  const weightOnlyPilotDevice = agent === "SIM-DESK" || agent === "FM1";
+  if (
+    !parsed &&
+    defaultPlu &&
+    weightOnlyPilotDevice &&
+    payload.weightGrams &&
+    payload.weightGrams > 0
+  ) {
+    const item = await prisma.catalogItem.findFirst({
+      where: { branchId, pluCode: defaultPlu },
+    });
+    if (item?.unitPriceRialPerKg) {
+      parsed = {
+        pluCode: defaultPlu,
+        weightGrams: payload.weightGrams,
+        unitPriceRialPerKg: item.unitPriceRialPerKg,
+      };
+    }
+  }
+
   if (!parsed) {
     await prisma.scaleIntegrationEvent.update({
       where: { id: eventId },
