@@ -55,9 +55,9 @@ export default function ScaleAgentLogUploadPanel() {
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-5 space-y-4">
-      <h3 className="text-lg font-black text-slate-800">آپلود لاگ Bridge (پشتیبانی)</h3>
+      <h3 className="text-lg font-black text-slate-800">آپلود لاگ پل ترازو (پشتیبانی)</h3>
       <p className="text-xs font-bold text-slate-500">
-        فایل JSONL روزانه از <code className="font-mono">bridge-YYYY-MM-DD.log</code> — حداکثر ۵۰۰ خط
+        فایل متنی روزانهٔ لاگ پل — حداکثر ۵۰۰ خط
       </p>
       <label className="block">
         <span className="text-xs font-black text-slate-500">انتخاب فایل</span>

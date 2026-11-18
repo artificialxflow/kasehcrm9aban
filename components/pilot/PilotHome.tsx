@@ -33,7 +33,7 @@ export default function PilotHome() {
       <div>
         <h2 className="text-2xl font-black text-slate-800">پایلوت انبار وزنی — شریعتی</h2>
         <p className="text-slate-500 font-bold mt-1">
-          {branchName || 'سوخاری بابل (شریعتی)'} · ترازو RADIN · فاز ۲: bridge + مانیتoring رویداد
+          {branchName || 'سوخاری بابل (شریعتی)'} · ترازو رادین · فاز ۲: پل ترازو و پایش رویداد
         </p>
       </div>
       <PilotNav />

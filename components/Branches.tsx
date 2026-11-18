@@ -309,7 +309,7 @@ const Branches: React.FC = () => {
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50 rounded-3xl border border-slate-100">
               {selectedBranch.isPilot ? (
                 <>
-                  <p className="font-black text-slate-800 mb-2">کالا و PLU این شعبه در پایلوت انبار است.</p>
+                  <p className="font-black text-slate-800 mb-2">کالا و کد فروش این شعبه در پایلوت انبار است.</p>
                   <Link
                     href="/pilot/shariati/catalog"
                     className="mt-4 px-6 py-3 bg-orange-500 text-white rounded-2xl font-black text-sm"

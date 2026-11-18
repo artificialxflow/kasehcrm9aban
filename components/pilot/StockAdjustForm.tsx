@@ -67,7 +67,7 @@ export default function StockAdjustForm({ onSuccess }: { onSuccess?: () => void 
         </select>
       </div>
       <div className="space-y-1">
-        <label className="text-xs font-black text-slate-500">موجودی واقعی (kg)</label>
+        <label className="text-xs font-black text-slate-500">موجودی واقعی (کیلوگرم)</label>
         <input
           required
           type="number"

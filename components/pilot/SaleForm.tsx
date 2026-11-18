@@ -63,7 +63,7 @@ export default function SaleForm({ onSuccess }: { onSuccess?: () => void }) {
   function applyBarcode() {
     const parsed = parseScaleBarcode(rawBarcode);
     if (!parsed) {
-      setMessage('فرمت بارکد نامعتبر. نمونه: PLU|گرم|ریال-هر-کیلو');
+      setMessage('فرمت بارکد نامعتبر. نمونه: کد‌فروش|گرم|ریال-هر-کیلو');
       return;
     }
     const item = items.find((i) => i.pluCode === parsed.pluCode);
@@ -117,7 +117,7 @@ export default function SaleForm({ onSuccess }: { onSuccess?: () => void }) {
       <div className="space-y-1">
         <h3 className="text-lg font-black text-slate-800">فروش دستی پنل (اضطراری)</h3>
         <p className="text-xs font-bold text-slate-500">
-          فروش خودکار از Bridge در{' '}
+          فروش خودکار از پل ترازو در{' '}
           <Link href="/pilot/shariati/scale-events" className="text-orange-600 underline">
             رویداد ترازو
           </Link>{' '}
@@ -125,14 +125,14 @@ export default function SaleForm({ onSuccess }: { onSuccess?: () => void }) {
         </p>
       </div>
       <div className="space-y-1">
-        <label className="text-xs font-black text-slate-500">بارکد / payload (PLU|گرم|ریال/kg)</label>
+        <label className="text-xs font-black text-slate-500">بارکد (کد‌فروش|گرم|ریال/کیلو)</label>
         <div className="flex gap-2">
           <input
             dir="ltr"
             className="flex-1 px-3 py-2 rounded-xl border border-slate-200 font-bold text-sm"
             value={rawBarcode}
             onChange={(e) => setRawBarcode(e.target.value)}
-            placeholder="PLU|گرم|فی-ریال-هر-کیلو"
+            placeholder="کد‌فروش|گرم|فی-ریال-هر-کیلو"
           />
           <button type="button" onClick={applyBarcode} className="px-3 py-2 rounded-xl bg-slate-800 text-white text-xs font-black">
             اعمال
@@ -156,7 +156,7 @@ export default function SaleForm({ onSuccess }: { onSuccess?: () => void }) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-xs font-black text-slate-500">وزن (kg)</label>
+          <label className="text-xs font-black text-slate-500">وزن (کیلوگرم)</label>
           <input
             type="number"
             step="0.001"
@@ -168,7 +168,7 @@ export default function SaleForm({ onSuccess }: { onSuccess?: () => void }) {
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-black text-slate-500">فی (ریال/kg)</label>
+          <label className="text-xs font-black text-slate-500">فی (ریال/کیلوگرم)</label>
           <input
             dir="ltr"
             className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold"

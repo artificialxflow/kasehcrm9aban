@@ -34,7 +34,7 @@ export default function ScaleAgentMonitor() {
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-4">
-      <p className="text-sm font-black text-slate-700 mb-2">ترازوها / Agentهای شعبه</p>
+      <p className="text-sm font-black text-slate-700 mb-2">ترازوها / نماینده‌های شعبه</p>
       <ul className="space-y-2 text-xs font-bold text-slate-600">
         {rows.map((hb) => (
           <li key={hb.hostname} className="flex flex-wrap gap-2 items-center">

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatToman } from '@/lib/money';
 import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
+import { catalogTypeLabelFa } from '@/lib/pilot/labels-fa';
 
 type CatalogItem = {
   id: string;
@@ -11,12 +12,6 @@ type CatalogItem = {
   pluCode: string | null;
   unitPriceRialPerKg: string | null;
   isActive: boolean;
-};
-
-const TYPE_LABEL: Record<string, string> = {
-  RAW: 'مواد خام (RAW)',
-  WEIGHED_SALE: 'فروش وزنی (ترازو)',
-  PIECE: 'عددی',
 };
 
 export default function CatalogManager() {
@@ -47,7 +42,7 @@ export default function CatalogManager() {
     setLoading(true);
     setMessage('');
   if (type === 'WEIGHED_SALE' && !pluCode.trim()) {
-      setMessage('برای فروش وزنی، کد PLU الزامی است.');
+      setMessage('برای فروش وزنی، کد فروش الزامی است.');
       setLoading(false);
       return;
     }
@@ -122,7 +117,7 @@ export default function CatalogManager() {
       <form onSubmit={handleCreate} className="bg-white p-6 rounded-3xl border-2 border-slate-100 space-y-4 max-w-2xl">
         <h3 className="text-lg font-black text-slate-800">افزودن کالا به شعبه شریعتی</h3>
         <p className="text-xs text-slate-500 font-bold leading-relaxed">
-          فروش وزنی: PLU و فی الزامی. بارکد RADIN (اختیاری) برای mapping سخت‌افزار.
+          فروش وزنی: کد فروش و فی الزامی. بارکد رادین (اختیاری) برای نگاشت سخت‌افزار.
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
           <div className="space-y-1 sm:col-span-2">
@@ -146,7 +141,7 @@ export default function CatalogManager() {
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-black text-slate-500">کد PLU</label>
+            <label className="text-xs font-black text-slate-500">کد فروش</label>
             <input
               className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold"
               placeholder="مثلاً 1001"
@@ -156,7 +151,7 @@ export default function CatalogManager() {
           </div>
           {type === 'WEIGHED_SALE' && (
             <div className="space-y-1">
-              <label className="text-xs font-black text-slate-500">بارکد RADIN (اختیاری)</label>
+              <label className="text-xs font-black text-slate-500">بارکد رادین (اختیاری)</label>
               <input
                 dir="ltr"
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold"
@@ -168,7 +163,7 @@ export default function CatalogManager() {
           )}
           {type === 'WEIGHED_SALE' && (
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-black text-slate-500">فی فروش (تومان / kg)</label>
+              <label className="text-xs font-black text-slate-500">فی فروش (تومان / کیلوگرم)</label>
               <input
                 required
                 type="number"
@@ -201,8 +196,8 @@ export default function CatalogManager() {
             <tr>
               <th className="px-4 py-3 font-black text-slate-500">کالا</th>
               <th className="px-4 py-3 font-black text-slate-500">نوع</th>
-              <th className="px-4 py-3 font-black text-slate-500">PLU</th>
-              <th className="px-4 py-3 font-black text-slate-500">فی (تومان/kg)</th>
+              <th className="px-4 py-3 font-black text-slate-500">کد فروش</th>
+              <th className="px-4 py-3 font-black text-slate-500">فی (تومان/کیلو)</th>
               <th className="px-4 py-3 font-black text-slate-500">وضعیت</th>
             </tr>
           </thead>
@@ -233,7 +228,7 @@ function CatalogRow({
   return (
     <tr className={item.isActive ? '' : 'opacity-50 bg-slate-50'}>
       <td className="px-4 py-3 font-bold text-slate-800">{item.name}</td>
-      <td className="px-4 py-3 text-slate-500 font-bold text-xs">{TYPE_LABEL[item.type] ?? item.type}</td>
+      <td className="px-4 py-3 text-slate-500 font-bold text-xs">{catalogTypeLabelFa(item.type)}</td>
       <td className="px-4 py-3 font-mono text-xs">{item.pluCode ?? '—'}</td>
       <td className="px-4 py-3">
         {item.type === 'WEIGHED_SALE' ? (
@@ -275,11 +270,11 @@ function CatalogRow({
 function translateError(code: string) {
   switch (code) {
     case 'PLU_REQUIRED':
-      return 'برای فروش وزنی کد PLU الزامی است.';
+      return 'برای فروش وزنی کد فروش الزامی است.';
     case 'UNIT_PRICE_REQUIRED':
       return 'فی فروش الزامی است.';
     case 'PLU_DUPLICATE':
-      return 'این PLU قبلاً ثبت شده است.';
+      return 'این کد فروش قبلاً ثبت شده است.';
     default:
       return code;
   }

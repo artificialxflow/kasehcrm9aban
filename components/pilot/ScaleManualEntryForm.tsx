@@ -30,7 +30,7 @@ export default function ScaleManualEntryForm({ onSaved }: { onSaved?: () => void
         setItems(list);
         if (list.length && !pluCode) setPluCode(list[0].pluCode);
       })
-      .catch(() => setError('بارگذاری کatalog ناموفق'));
+      .catch(() => setError('بارگذاری کاتالوگ ناموفق'));
   }, [base, pluCode]);
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function ScaleManualEntryForm({ onSaved }: { onSaved?: () => void
     setMessage('');
     const weight = parseInt(weightGrams, 10);
     if (!pluCode || !Number.isFinite(weight) || weight <= 0) {
-      setError('PLU و وزن (گرم) معتبر وارد کنید.');
+      setError('کد فروش و وزن (گرم) معتبر وارد کنید.');
       setSaving(false);
       return;
     }
@@ -81,11 +81,11 @@ export default function ScaleManualEntryForm({ onSaved }: { onSaved?: () => void
     >
       <h3 className="text-lg font-black text-slate-800">ثبت دستی رویداد ترازو</h3>
       <p className="text-xs font-bold text-slate-500">
-        وقتی Bridge یا ترازو آفلاین است؛ نوع رویداد: manual
+        وقتی پل ترازو یا دستگاه آفلاین است؛ نوع رویداد: دستی
       </p>
       <div className="flex flex-wrap gap-4">
         <label className="flex flex-col gap-1 min-w-[200px]">
-          <span className="text-xs font-black text-slate-500">کالای وزنی (PLU)</span>
+          <span className="text-xs font-black text-slate-500">کالای وزنی (کد فروش)</span>
           <select
             value={pluCode}
             onChange={(ev) => setPluCode(ev.target.value)}
@@ -123,7 +123,7 @@ export default function ScaleManualEntryForm({ onSaved }: { onSaved?: () => void
         disabled={saving}
         className="px-5 py-2 rounded-xl bg-slate-800 text-white text-sm font-black disabled:opacity-50"
       >
-        {saving ? 'در حال ثبت...' : 'ثبت manual'}
+        {saving ? 'در حال ثبت...' : 'ثبت دستی'}
       </button>
       {error ? <p className="text-rose-600 text-sm font-bold">{error}</p> : null}
       {message ? <p className="text-emerald-700 text-sm font-bold">{message}</p> : null}

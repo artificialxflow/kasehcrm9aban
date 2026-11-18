@@ -1,6 +1,7 @@
 'use client';
 
 import { formatKgFromGrams, formatToman } from '@/lib/money';
+import { catalogTypeLabelFa } from '@/lib/pilot/labels-fa';
 
 type StockRow = {
   quantityGrams: number;
@@ -23,7 +24,7 @@ export default function StockTable({ stock }: { stock: StockRow[] }) {
           <tr>
             <th className="px-4 py-3 font-black text-slate-500">کالا</th>
             <th className="px-4 py-3 font-black text-slate-500">نوع</th>
-            <th className="px-4 py-3 font-black text-slate-500">موجودی (kg)</th>
+            <th className="px-4 py-3 font-black text-slate-500">موجودی (کیلوگرم)</th>
             <th className="px-4 py-3 font-black text-slate-500">فی فروش</th>
           </tr>
         </thead>
@@ -31,11 +32,13 @@ export default function StockTable({ stock }: { stock: StockRow[] }) {
           {stock.map((row, i) => (
             <tr key={i}>
               <td className="px-4 py-3 font-bold text-slate-800">{row.catalogItem.name}</td>
-              <td className="px-4 py-3 text-slate-500 font-bold">{row.catalogItem.type}</td>
+              <td className="px-4 py-3 text-slate-500 font-bold">
+                {catalogTypeLabelFa(row.catalogItem.type)}
+              </td>
               <td className="px-4 py-3 font-black">{formatKgFromGrams(row.quantityGrams)}</td>
               <td className="px-4 py-3 font-bold text-orange-600">
                 {row.catalogItem.unitPriceRialPerKg
-                  ? `${formatToman(row.catalogItem.unitPriceRialPerKg)} تومان/kg`
+                  ? `${formatToman(row.catalogItem.unitPriceRialPerKg)} تومان/کیلو`
                   : '—'}
               </td>
             </tr>

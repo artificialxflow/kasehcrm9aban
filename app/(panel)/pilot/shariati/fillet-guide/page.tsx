@@ -12,32 +12,40 @@ export default function FilletGuidePage() {
         <ol className="list-decimal pr-6 space-y-3">
           <li>
             <Link href="/pilot/shariati/catalog" className="text-orange-600 underline">
-              کالاها و PLU
+              کالاها و کد فروش
             </Link>
-            : <code className="font-mono">RAW-FILLET</code> (خام)، <code className="font-mono">FILLET01</code> (فروش وزنی).
+            : خام با کد{' '}
+            <span className="font-mono text-xs" dir="ltr">
+              RAW-FILLET
+            </span>
+            ، فروش وزنی با کد{' '}
+            <span className="font-mono text-xs" dir="ltr">
+              FILLET01
+            </span>
+            .
           </li>
           <li>
             <Link href="/pilot/shariati/purchases" className="text-orange-600 underline">
               خرید وزنی
             </Link>
-            : مثلاً ۱۰ kg خام.
+            : مثلاً ۱۰ کیلوگرم خام.
           </li>
           <li>
             <Link href="/pilot/shariati/scale-events" className="text-orange-600 underline">
               رویداد ترازو
             </Link>
-            : SIM-CRM نوع <strong>فروش</strong> + PLU <code className="font-mono">FILLET01</code> + وزن (۳۰۰، ۸۰۰ g).
+            : شبیه‌سازی نوع <strong>فروش</strong> + کد فروش فیله + وزن (۳۰۰ و ۸۰۰ گرم).
           </li>
           <li>
             <Link href="/pilot/shariati/report" className="text-orange-600 underline">
               گزارش روزانه
             </Link>
-            : مقایسه ورود RAW و خروج فروش.
+            : مقایسهٔ ورود خام و خروج فروش.
           </li>
         </ol>
-        <p className="text-xs text-slate-600">
-          Bridge: با <code className="font-mono">PILOT_DEFAULT_SALE_PLU=FILLET01</code> روی سرور، ارسال وزن از SIM-DESK هم فاکتور می‌زند.
-          جزئیات: <code className="font-mono">docs/fillet-pilot-flow-fa.md</code>
+        <p className="text-xs text-slate-600 leading-relaxed">
+          اگر پل ترازو فقط وزن می‌فرستد، روی سرور «کد فروش پیش‌فرض پایلوت» را روی همان کد فیله تنظیم کنید تا
+          از میز آزمایشی دفتر هم فاکتور زده شود. جزئیات در سند «فلو پایلوت فیله» داخل مستندات پروژه.
         </p>
       </div>
     </div>

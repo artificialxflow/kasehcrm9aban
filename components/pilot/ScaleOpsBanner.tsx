@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
+import { scaleEventStatusLabelFa, scaleEventTypeLabelFa } from '@/lib/pilot/labels-fa';
 
 type Heartbeat = {
   hostname: string;
@@ -64,7 +65,7 @@ export default function ScaleOpsBanner() {
         <div>
           <h3 className="text-lg font-black text-slate-800">کنسول عملیات ترازو</h3>
           <p className="text-xs font-bold text-slate-600 mt-1 max-w-2xl">
-            اتصال فیزیکی روی PC شعبه است (Bridge). این صفحه وضعیت سرور و رویدادها را نشان می‌دهد — نه وزن زنده از COM.
+            اتصال فیزیکی روی رایانهٔ شعبه است (پل ترازو). این صفحه وضعیت سرور و رویدادها را نشان می‌دهد — نه وزن زنده از پورت سریال.
           </p>
         </div>
         <Link
@@ -77,10 +78,10 @@ export default function ScaleOpsBanner() {
 
       <div className="grid sm:grid-cols-3 gap-3 text-sm">
         <div className="bg-white rounded-xl p-3 border border-slate-100">
-          <p className="text-xs font-black text-slate-500">Agent / Bridge</p>
+          <p className="text-xs font-black text-slate-500">پل ترازو / نماینده</p>
           <p className="font-black text-slate-800 mt-1">
             {!hb
-              ? 'heartbeat ندارد — Bridge خاموش یا کلید API؟'
+              ? 'سیگنال زنده نیست — پل خاموش یا کلید درگاه؟'
               : stale
                 ? `${hb.hostname}: بیش از ۱ ساعت سکوت`
                 : `${hb.hostname}: آنلاین اخیر`}
@@ -100,20 +101,21 @@ export default function ScaleOpsBanner() {
           <p className="font-black text-slate-800 mt-1">{count24h ?? '—'}</p>
           {lastEvent ? (
             <p className="text-xs text-slate-500 mt-1">
-              آخرین: {lastEvent.status} · {lastEvent.eventType}
+              آخرین: {scaleEventStatusLabelFa(lastEvent.status)} ·{' '}
+              {scaleEventTypeLabelFa(lastEvent.eventType)}
             </p>
           ) : null}
         </div>
         <div className="bg-white rounded-xl p-3 border border-slate-100">
           <p className="text-xs font-black text-slate-500">لینک سریع</p>
           <Link href="/pilot/shariati/catalog" className="text-xs font-black text-emerald-700 block mt-1">
-            کالاها و PLU
+            کالاها و کد فروش
           </Link>
           <Link href="/pilot/shariati/devices" className="text-xs font-black text-slate-700 block mt-1">
             دستگاه‌های ترازو
           </Link>
           <p className="text-xs text-slate-500 mt-2">
-            خطای 401؟ فایل <span className="font-mono">docs/ops-scale-api-key.md</span> در repo
+            خطای ۴۰۱؟ راهنمای «کلید درگاه ترازو» در پوشهٔ مستندات پروژه
           </p>
         </div>
       </div>
@@ -122,13 +124,13 @@ export default function ScaleOpsBanner() {
         <summary className="cursor-pointer font-black">سه سناریوی رایج</summary>
         <ul className="list-disc pr-5 mt-2 space-y-1 leading-relaxed">
           <li>
-            <strong>Bridge OK:</strong> Agent آنلاین + ردیف جدید «فروش» و وضعیت موفق.
+            <strong>پل سالم:</strong> نماینده آنلاین + ردیف جدید «فروش» و وضعیت موفق.
           </li>
           <li>
-            <strong>قطع Bridge/ترازو:</strong> ثبت manual همین صفحه یا فروش دستی در تب فروش ترازو.
+            <strong>قطع پل یا ترازو:</strong> ثبت دستی همین صفحه یا فروش دستی در تب فروش ترازو.
           </li>
           <li>
-            <strong>failed:</strong> PLU در کatalog نیست — کالاها و PLU را اصلاح کنید.
+            <strong>ناموفق:</strong> کد فروش در کاتالوگ نیست — کالاها را اصلاح کنید.
           </li>
         </ul>
       </details>

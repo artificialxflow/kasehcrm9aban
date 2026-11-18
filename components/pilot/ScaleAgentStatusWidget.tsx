@@ -46,7 +46,7 @@ export default function ScaleAgentStatusWidget() {
   if (error && error !== 'no_agent') {
     return (
       <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm font-bold text-rose-700">
-        وضعیت agent: {error}
+        وضعیت نمایندهٔ ترازو: {error === 'no_agent' ? 'نماینده‌ای ثبت نشده' : error}
       </div>
     );
   }
@@ -54,7 +54,7 @@ export default function ScaleAgentStatusWidget() {
   if (!hb) {
     return (
       <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm font-bold text-amber-900">
-        هنوز heartbeat از هیچ agent این شعبه دریافت نشده (Bridge خاموش یا heartbeat فعال نیست).
+        هنوز سیگنال زنده از هیچ نماینده‌ای دریافت نشده (پل ترازو خاموش یا ارسال سیگنال غیرفعال است).
       </div>
     );
   }
@@ -69,14 +69,14 @@ export default function ScaleAgentStatusWidget() {
       }`}
     >
       <p className="font-black text-slate-800">
-        Agent {hb.hostname}
+        نماینده {hb.hostname}
         {stale ? ' · بیش از ۱ ساعت سکوت' : ' · آنلاین اخیر'}
       </p>
       <p className="text-xs font-bold text-slate-600 mt-1">
         آخرین سیگنال: {new Date(hb.lastSeenAt).toLocaleString('fa-IR')}
         {hb.payload?.comPort ? ` · ${hb.payload.comPort}` : ''}
         {hb.payload?.agentVersion ? ` · v${hb.payload.agentVersion}` : ''}
-        {hb.payload?.livePostEnabled ? ' · live POST فعال' : ''}
+        {hb.payload?.livePostEnabled ? ' · ارسال زندهٔ فروش فعال' : ''}
       </p>
       {hb.payload?.lastSerialDataAt ? (
         <p className="text-xs font-bold text-slate-500 mt-1">

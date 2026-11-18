@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatKgFromGrams, formatToman } from '@/lib/money';
 import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
+import { saleSourceLabelFa } from '@/lib/pilot/labels-fa';
 
 type PurchaseRow = {
   id: string;
@@ -64,7 +65,7 @@ export function PurchaseInvoiceList({ refreshKey = 0 }: { refreshKey?: number })
               <td className="px-4 py-2 text-xs">
                 {p.lines.map((l, i) => (
                   <span key={i}>
-                    {l.catalogItem.name} ({formatKgFromGrams(l.weightGrams)} kg)
+                    {l.catalogItem.name} ({formatKgFromGrams(l.weightGrams)} کیلوگرم)
                     {i < p.lines.length - 1 ? ' · ' : ''}
                   </span>
                 ))}
@@ -127,11 +128,11 @@ export function SaleInvoiceList({
           {rows.map((s) => (
             <tr key={s.id}>
               <td className="px-4 py-2 font-bold text-slate-600">{formatDate(s.soldAt)}</td>
-              <td className="px-4 py-2 text-xs font-bold">{sourceLabel(s.source)}</td>
+              <td className="px-4 py-2 text-xs font-bold">{saleSourceLabelFa(s.source)}</td>
               <td className="px-4 py-2 text-xs">
                 {s.lines.map((l, i) => (
                   <span key={i}>
-                    {l.catalogItem.name} ({formatKgFromGrams(l.weightGrams)} kg)
+                    {l.catalogItem.name} ({formatKgFromGrams(l.weightGrams)} کیلوگرم)
                     {i < s.lines.length - 1 ? ' · ' : ''}
                   </span>
                 ))}
@@ -150,16 +151,5 @@ function formatDate(iso: string) {
     return new Date(iso).toLocaleString('fa-IR', { dateStyle: 'short', timeStyle: 'short' });
   } catch {
     return iso;
-  }
-}
-
-function sourceLabel(source: string) {
-  switch (source) {
-    case 'SCALE_SERIAL':
-      return 'ترازو (API)';
-    case 'MANUAL':
-      return 'دستی';
-    default:
-      return 'رسید/بارکد';
   }
 }

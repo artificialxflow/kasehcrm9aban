@@ -47,18 +47,22 @@ export default function DailyReport() {
           <p className="text-sm font-bold text-orange-600">{formatToman(report.saleTotalRial)} تومان</p>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-100">
-          <p className="text-xs font-black text-slate-500">ورود RAW (وزن)</p>
-          <p className="text-xl font-black text-slate-800">{formatKgFromGrams(report.rawPurchaseInGrams)} kg</p>
+          <p className="text-xs font-black text-slate-500">ورود مواد خام (وزن)</p>
+          <p className="text-xl font-black text-slate-800">
+            {formatKgFromGrams(report.rawPurchaseInGrams)} کیلوگرم
+          </p>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-100">
           <p className="text-xs font-black text-slate-500">خروج فروش (وزن)</p>
-          <p className="text-xl font-black text-slate-800">{formatKgFromGrams(report.saleOutGrams)} kg</p>
+          <p className="text-xl font-black text-slate-800">
+            {formatKgFromGrams(report.saleOutGrams)} کیلوگرم
+          </p>
         </div>
       </div>
       <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-        <p className="text-sm font-black text-amber-900">تطبیق وزنی MVP</p>
+        <p className="text-sm font-black text-amber-900">تطبیق وزنی (نسخهٔ اولیه)</p>
         <p className="text-xs font-bold text-amber-800 mt-1">
-          مقایسه ساده ورود مواد خام با خروج فروش (بدون BOM پخت). برای سود واقعی، ضایعات استاندارد در فاز بعد اضافه می‌شود.
+          مقایسهٔ سادهٔ ورود مواد خام با خروج فروش (بدون فرمول مصرف پخت). برای سود واقعی، ضایعات استاندارد در فاز بعد اضافه می‌شود.
         </p>
       </div>
       <div>

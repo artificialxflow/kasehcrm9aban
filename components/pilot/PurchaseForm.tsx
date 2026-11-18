@@ -76,7 +76,7 @@ export default function PurchaseForm({ onSuccess }: { onSuccess?: () => void }) 
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="text-xs font-black text-slate-500">وزن (kg)</label>
+          <label className="text-xs font-black text-slate-500">وزن (کیلوگرم)</label>
           <input
             type="number"
             step="0.001"
@@ -87,7 +87,7 @@ export default function PurchaseForm({ onSuccess }: { onSuccess?: () => void }) 
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-black text-slate-500">فی (ریال/kg)</label>
+          <label className="text-xs font-black text-slate-500">فی (ریال/کیلوگرم)</label>
           <input
             type="text"
             dir="ltr"

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { pilotApiBase, PILOT_BRANCH_LEGACY_ID } from '@/lib/pilot/constants';
+import { scaleConnectionLabelFa } from '@/lib/pilot/labels-fa';
 
 type Device = {
   id: string;
@@ -9,13 +10,6 @@ type Device = {
   model: string;
   connection: string;
   isActive: boolean;
-};
-
-const CONN: Record<string, string> = {
-  RS232: 'RS-232',
-  USB: 'USB',
-  PS2: 'PS/2',
-  BARCODE_ONLY: 'فقط بارکد',
 };
 
 export default function ScaleDeviceManager() {
@@ -72,15 +66,15 @@ export default function ScaleDeviceManager() {
           className="w-full px-3 py-2 rounded-xl border font-bold"
           value={label}
           onChange={(e) => setLabel(e.target.value)}
-          placeholder="مثلاً FM1"
+          placeholder="مثلاً میز ۱"
         />
         <select
           className="w-full px-3 py-2 rounded-xl border font-bold"
           value={connection}
           onChange={(e) => setConnection(e.target.value)}
         >
-          <option value="RS232">RS-232</option>
-          <option value="USB">USB</option>
+          <option value="RS232">{scaleConnectionLabelFa('RS232')}</option>
+          <option value="USB">{scaleConnectionLabelFa('USB')}</option>
           <option value="BARCODE_ONLY">فقط بارکد</option>
         </select>
         <button type="submit" className="w-full py-2 rounded-xl bg-slate-800 text-white font-black text-sm">
@@ -100,7 +94,7 @@ export default function ScaleDeviceManager() {
           {devices.map((d) => (
             <tr key={d.id} className="border-t">
               <td className="px-4 py-2 font-bold">{d.label}</td>
-              <td className="px-4 py-2">{CONN[d.connection] ?? d.connection}</td>
+              <td className="px-4 py-2">{scaleConnectionLabelFa(d.connection)}</td>
               <td className="px-4 py-2">
                 <button
                   type="button"

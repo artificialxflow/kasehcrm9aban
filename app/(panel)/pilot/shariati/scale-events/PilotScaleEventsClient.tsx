@@ -18,7 +18,7 @@ export default function PilotScaleEventsClient() {
       <div>
         <h2 className="text-2xl font-black text-slate-800">رویداد ترازو — پایلوت شریعتی</h2>
         <p className="text-slate-500 font-bold mt-1">
-          فقط رویدادهای تجاری از KasehScaleBridge · استریم خام وزن به سرور ارسال نمی‌شود
+          فقط رویدادهای تجاری از پل ترازو — استریم خام وزن به سرور ارسال نمی‌شود
         </p>
       </div>
       <PilotNav />

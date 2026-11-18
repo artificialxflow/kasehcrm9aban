@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 
 const links = [
   { href: '/pilot/shariati', label: 'خلاصه پایلوت' },
-  { href: '/pilot/shariati/catalog', label: 'کالاها و PLU' },
+  { href: '/pilot/shariati/catalog', label: 'کالاها و کد فروش' },
   { href: '/pilot/shariati/purchases', label: 'خرید وزنی' },
   { href: '/pilot/shariati/scale-events', label: 'رویداد ترازو' },
   { href: '/pilot/shariati/sales', label: 'فروش دستی' },

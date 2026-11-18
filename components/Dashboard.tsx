@@ -7,6 +7,7 @@ import { CONCEPTS } from '@/lib/constants';
 import type { DashboardSummary } from '@/lib/api/types';
 import { BranchConcept } from '@/lib/types';
 import { formatToman, rialToToman } from '@/lib/money';
+import { saleSourceLabelFa } from '@/lib/pilot/labels-fa';
 
 const Dashboard: React.FC = () => {
   const [conceptFilter, setConceptFilter] = useState<BranchConcept | 'all'>('all');
@@ -233,7 +234,7 @@ const Dashboard: React.FC = () => {
               {filteredSales.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-slate-500 font-bold text-sm">
-                    هنوز فروشی ثبت نشده — از پایلوت شریعتی یا bridge ترازو ثبت کنید.
+                    هنوز فروشی ثبت نشده — از پایلوت شریعتی یا پل ترازو ثبت کنید.
                   </td>
                 </tr>
               ) : (
@@ -247,7 +248,9 @@ const Dashboard: React.FC = () => {
                     <td className="px-6 py-4 text-sm text-slate-500 font-bold">
                       {new Date(sale.soldAt).toLocaleString('fa-IR')}
                     </td>
-                    <td className="px-6 py-4 text-xs font-black text-slate-500">{sale.source}</td>
+                    <td className="px-6 py-4 text-xs font-black text-slate-500">
+                      {saleSourceLabelFa(sale.source)}
+                    </td>
                   </tr>
                 ))
               )}

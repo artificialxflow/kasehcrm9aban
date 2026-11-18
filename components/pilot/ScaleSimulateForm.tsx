@@ -37,7 +37,7 @@ export default function ScaleSimulateForm({ onSaved }: { onSaved?: () => void })
       return;
     }
     if (eventType === 'sale' && !pluCode.trim()) {
-      setError('برای فروش (sale) باید PLU وارد شود — مثلاً 1001');
+      setError('برای فروش باید کد فروش وارد شود — مثلاً ۱۰۰۱');
       setSaving(false);
       return;
     }
@@ -70,13 +70,13 @@ export default function ScaleSimulateForm({ onSaved }: { onSaved?: () => void })
       onSubmit={submit}
       className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 space-y-4"
     >
-      <h3 className="text-lg font-black text-slate-800">شبیه‌سازی ترازو از پنل (SIM-CRM)</h3>
+      <h3 className="text-lg font-black text-slate-800">شبیه‌سازی ترازو از پنل (میز آزمایشی)</h3>
       <p className="text-xs font-bold text-slate-600 leading-relaxed">
-        <strong>مشاهده:</strong> فقط وزن در لیست CRM (بدون فاکتور) — مثل دکمه فیک در مغازه برای تست.
+        <strong>مشاهده:</strong> فقط وزن در لیست (بدون فاکتور) — مثل دکمهٔ آزمایشی در مغازه.
         <br />
-        <strong>فروش (sale):</strong> PLU الزامی → فاکتور و کسر موجودی اگر catalog درست باشد.
+        <strong>فروش:</strong> کد فروش الزامی → فاکتور و کسر موجودی اگر کاتالوگ درست باشد.
         <br />
-        Bridge واقعی روی PC شعبه است؛ اینجا برای تست از دفتر بدون <code className="font-mono">SCALE_API_KEY</code> در مرورگر.
+        پل واقعی روی رایانهٔ شعبه است؛ اینجا برای تست از دفتر بدون کلید درگاه در مرورگر.
       </p>
       <div className="flex flex-wrap gap-4">
         <label className="flex flex-col gap-1">
@@ -97,12 +97,12 @@ export default function ScaleSimulateForm({ onSaved }: { onSaved?: () => void })
             className="px-3 py-2 rounded-xl border border-slate-200 text-sm font-bold min-w-[180px]"
           >
             <option value="observe">مشاهده (فقط ردیف در لیست)</option>
-            <option value="sale">فروش + فاکتور (نیاز PLU)</option>
+            <option value="sale">فروش + فاکتور (نیاز کد فروش)</option>
           </select>
         </label>
         <label className="flex flex-col gap-1 min-w-[160px]">
           <span className="text-xs font-black text-slate-500">
-            PLU {eventType === 'sale' ? '(الزامی)' : '(اختیاری)'}
+            کد فروش {eventType === 'sale' ? '(الزامی)' : '(اختیاری)'}
           </span>
           <input
             value={pluCode}
@@ -117,7 +117,7 @@ export default function ScaleSimulateForm({ onSaved }: { onSaved?: () => void })
         disabled={saving}
         className="px-5 py-2 rounded-xl bg-emerald-700 text-white text-sm font-black disabled:opacity-50"
       >
-        {saving ? 'در حال ارسال...' : 'ارسال SIM-CRM → CRM'}
+        {saving ? 'در حال ارسال...' : 'ارسال شبیه‌سازی به سرور'}
       </button>
       {error ? <p className="text-rose-600 text-sm font-bold">{error}</p> : null}
       {lastResponse ? (
