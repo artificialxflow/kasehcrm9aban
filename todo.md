@@ -42,9 +42,10 @@
 
 ## فاز ۲أ — پاکسازی دمو شعبه شریعتی (legacyId ۲)
 
-- [x] 2أ.1 اسکریپت `npm run db:reset-pilot` — [prisma/scripts/reset-pilot-branch.ts](prisma/scripts/reset-pilot-branch.ts)
+- [x] 2أ.1 `npm run db:reset-pilot` — تراکنش و موجودی
+- [x] 2أ.1ب `npm run db:reset-pilot:full` — + کاتالوگ و دستگاه ترازو (شروع دستی؛ **بدون seed**)
 - [x] 2أ.4 seed: موجودی اولیه دمو (`POT001`) = ۰
-- [ ] 2أ.3 پرود: `npm run db:reset-pilot` سپس `npm run db:seed` (قبل از تست فیله تمیز)
+- [ ] 2أ.3 پرود: شروع دستی → `db:reset-pilot:full` (seed نزنید)
 
 ---
 

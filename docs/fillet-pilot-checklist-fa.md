@@ -14,10 +14,12 @@
 - [ ] `npx prisma migrate deploy`
 - [ ] `npm run db:seed`
 
-## پاکسازی اختیاری (تست تمیز)
+## پاکسازی — شروع دستی از صفر
 
-- [ ] `npm run db:reset-pilot` (فقط شعبه شریعتی)
-- [ ] دوباره `npm run db:seed`
+- [ ] `npm run db:reset-pilot:full` (کنسول Runflare در `/app`)
+- [ ] **seed نزنید** — کالاها را خودتان از پنل «ثبت کالا» بسازید
+
+فقط صفر کردن فاکتور با کالاهای آماده: `db:reset-pilot` + `db:seed`
 
 ---
 

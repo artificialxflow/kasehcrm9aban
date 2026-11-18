@@ -1,12 +1,14 @@
 /**
- * پاکسازی دادهٔ عملیاتی پایلوت شعبه شریعتی (legacyId = 2).
- * کاتالوگ، کاربران و شعب دیگر دست نخورده می‌مانند.
+ * پاکسازی دادهٔ پایلوت شعبه شریعتی (legacyId = 2).
+ * شعب، کاربران و منوی آنلاین سراسری دست نخورده می‌مانند.
  *
- * استفاده: DATABASE_URL=... npm run db:reset-pilot
+ * npm run db:reset-pilot        — فقط تراکنش‌ها و موجودی
+ * npm run db:reset-pilot:full   — همان + کاتالوگ کالا + دستگاه‌های ترازو شعبه
  */
 import { PrismaClient } from "@prisma/client";
 
 const PILOT_LEGACY_ID = "2";
+const full = process.argv.includes("--full");
 
 const prisma = new PrismaClient();
 
@@ -27,10 +29,17 @@ async function main() {
     const heartbeats = await tx.scaleAgentHeartbeat.deleteMany({ where: { branchId } });
     const logs = await tx.scaleAgentLogUpload.deleteMany({ where: { branchId } });
 
-    return { events, tickets, sales, purchases, movements, stock, heartbeats, logs };
+    let catalog = { count: 0 };
+    let devices = { count: 0 };
+    if (full) {
+      devices = await tx.scaleDevice.deleteMany({ where: { branchId } });
+      catalog = await tx.catalogItem.deleteMany({ where: { branchId } });
+    }
+
+    return { events, tickets, sales, purchases, movements, stock, heartbeats, logs, catalog, devices };
   });
 
-  console.log(`پاکسازی شعبه «${branch.name}» (legacyId ${PILOT_LEGACY_ID}):`);
+  console.log(`پاکسازی شعبه «${branch.name}» (legacyId ${PILOT_LEGACY_ID})${full ? " — حالت کامل" : ""}:`);
   console.log(`  رویداد ترازو: ${deleted.events.count}`);
   console.log(`  بلیت ترازو: ${deleted.tickets.count}`);
   console.log(`  فاکتور فروش: ${deleted.sales.count}`);
@@ -39,7 +48,15 @@ async function main() {
   console.log(`  ردیف موجودی: ${deleted.stock.count}`);
   console.log(`  سیگنال نماینده: ${deleted.heartbeats.count}`);
   console.log(`  آپلود لاگ: ${deleted.logs.count}`);
-  console.log("پیشنهاد: npm run db:seed برای بازسازی موجودی صفر و کاتالوگ.");
+  if (full) {
+    console.log(`  کالاهای کاتالوگ: ${deleted.catalog.count}`);
+    console.log(`  دستگاه ترازو: ${deleted.devices.count}`);
+    console.log("\nکاتالوگ خالی است — از پنل «کالاها و کد فروش» دستی ثبت کنید.");
+    console.log("توجه: db:seed دوباره کالاهای دمو را می‌سازد؛ برای شروع دستی seed نزنید.");
+  } else {
+    console.log("\nپیشنهاد: npm run db:seed برای بازسازی ردیف موجودی صفر (کاتالوگ بدون تغییر).");
+    console.log("برای پاک کردن کاتالوگ هم: npm run db:reset-pilot:full");
+  }
 }
 
 main()

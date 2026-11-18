@@ -242,7 +242,7 @@ function FailedRowActions({
     <div className="flex flex-col gap-1">
       {weightOnly ? (
         <p className="text-xs text-rose-800 font-bold leading-snug">
-          فقط وزن — متغیر «کد فروش پیش‌فرض پایلوت» روی سرور را تنظیم کنید یا از پنل با کد فروش بفروشید.
+          فقط وزن رسیده — یا از پنل با «کد فروش» بفروشید، یا روی سرور (Runflare) متغیر پیش‌فرض فیله را بگذارید و سرویس را ری‌استارت کنید.
           <Link href="/pilot/shariati/fillet-guide" className="text-orange-600 underline block mt-0.5">
             راهنمای فیله
           </Link>
