@@ -1,8 +1,0 @@
-{
-  "name": "Kaseh CRM Admin Panel",
-  "description": "A comprehensive food suite management system for the northern branches (Amol, Babol, Babolsar, Sari) with RTL support and modern UI/UX.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
-}
